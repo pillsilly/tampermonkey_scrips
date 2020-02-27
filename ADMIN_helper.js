@@ -7,7 +7,7 @@
 // @include https://10.**
 // @include https://onion.wroclaw.nsn-rdnet.net/*
 // @include http://localhost:*/*
-
+// @include http://*:*/ADMIN.html*
 
 // @grant        none
 // ==/UserScript==
