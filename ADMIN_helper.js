@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ADMIN scripts
 // @namespace    http://tampermonkey.net/
-// @version      0.1.5
+// @version      0.1.6
 // @description  try to take over the world!
 // @author       You
 // @include https://10.**
@@ -68,7 +68,6 @@
             const json = node2Json({node, withDescendants});
             navigator.clipboard.writeText(JSON.stringify(json));
             alert(`object ${distName} copied`)
-            console.log(json);
         })
 
         function node2Json({
