@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ADMIN scripts
 // @namespace    http://tampermonkey.net/
-// @version      0.1.4
+// @version      0.1.5
 // @description  try to take over the world!
 // @author       You
 // @include https://10.**
@@ -36,7 +36,7 @@
     function _loginDev() {
         _myService('imAuth').isRouteIdValid = () => { return true };
         $('input[name="userName"]').val('Nemuadmin');
-        $('input[name="password"]').val('Nemuuser');
+        $('input[name="password"]').val('nemuuser');
         $('div.login-buttons[a-text="Login"]').click();
     }
 
