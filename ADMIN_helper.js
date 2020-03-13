@@ -35,8 +35,8 @@
     window._loginDev = _loginDev;
     function _loginDev() {
         _myService('imAuth').isRouteIdValid = () => { return true };
-        $('input[name="userName"]').val('Nemuadmin');
-        $('input[name="password"]').val('nemuuser');
+        angular.element('input[name="userName"]').val('Nemuadmin').trigger('input');
+        angular.element('input[name="password"]').val('nemuuser').trigger('input');
         $('div.login-buttons[a-text="Login"]').click();
     }
 
