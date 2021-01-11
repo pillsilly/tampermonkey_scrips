@@ -1,73 +1,74 @@
 // ==UserScript==
-// @name         AutoRetry
+// @name         pipeline log helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  try to take over the world!
-// @author       You
+// @version      0.1.1
+// @description  pipeline log helper
+// @author       Frank
 // @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/?start=0
 // @grant        none
 // ==/UserScript==
 
+const STEP_PREFIX = [
+  'When I',
+  'And I',
+  'Given '
+];
+const FAILED_STEP_MARK = '✖ failed';
+
+// comment out for nodejs test
+// execute(require('fs').readFileSync('test/1.txt', {encoding: 'utf-8'}));
+// return;
+
 (function () {
-    'use strict';
+  'use strict';
+  console.log('pipe line log helper executing');
 
-    // const fs = require('fs');
+  const fileContent = document.querySelector('body>pre').textContent;
+  execute(fileContent);
 
-    const STEP_PREFIX = [
-        'When I',
-        'And I',
-        'Given '
-    ]
-
-    const fileContent = document.querySelector('body>pre').textContent;
-    // const fileContent = fs.readFileSync('test/1.txt', { encoding: 'utf-8' });
-    const lines = fileContent.split('\n');
-    // const lastIndex = lines.length - 1;
-
-
-    lines.forEach((line, index) => {
-        if (line.indexOf('✖ failed') < 0) return;
-
-
-        const info = retriveStepAndSchenario(index)
-        console.log(info)
-    });
-
-
-    function retriveStepAndSchenario(currentIndex) {
-        const toCheckLineIndex = currentIndex - 1;
-        const step = findStep(toCheckLineIndex);
-        const failureFirstLine = lines[currentIndex + 1]
-        const scenario = findScenario(toCheckLineIndex - 1)
-
-        return {
-            failureFirstLine,
-            index: toCheckLineIndex,
-            step,
-            scenario
-        }
-    }
-
-    function findScenario(index) {
-        const scenario = lines[index];
-        if (scenario.indexOf('Scenario:') >= 0) {
-            return scenario;
-        }
-
-        return findScenario(index - 1)
-    }
-
-
-
-    function findStep(index) {
-        const step = lines[index];
-        const isStep = STEP_PREFIX.some(p => {
-            return step.indexOf(p) >= 0;
-        })
-        if (isStep) {
-            return step;
-        }
-        return findScenario(index - 1)
-    }
-
+  console.log('pipe line log helper done');
 })();
+
+function execute(fileContent) {
+  const lines = fileContent.split('\n');
+
+  lines.forEach((line, index) => {
+    if (line.indexOf(FAILED_STEP_MARK) < 0) return;
+
+    const info = recallStepAndScenario(index);
+    const {FAILED_STEP_MARK_LINE_NUMBER, scenarioLine, stepLine, errorLine} = info;
+    const tr = `<tr><td>${FAILED_STEP_MARK_LINE_NUMBER}</td><td>${scenarioLine}</td><td>${stepLine}</td><td>${errorLine}</td></tr>`
+    console.info(tr)
+  });
+
+  function recallStepAndScenario(currentIndex) {
+    const toCheckLineIndex = currentIndex - 1;
+    const errorLine = lines[currentIndex + 1];
+    const stepLine = findStep(toCheckLineIndex);
+    const scenarioLine = findScenario(toCheckLineIndex - 1);
+
+    return {
+      errorLine,
+      FAILED_STEP_MARK_LINE_NUMBER: toCheckLineIndex,
+      stepLine,
+      scenarioLine
+    }
+  }
+
+  function findScenario(index) {
+    const line = lines[index];
+    if (line.indexOf('Scenario:') >= 0) {
+      return line;
+    }
+
+    return findScenario(index - 1)
+  }
+
+  function findStep(index) {
+    const line = lines[index];
+    const isStep = STEP_PREFIX.some(possiblePrefix => {
+      return line.indexOf(possiblePrefix) >= 0;
+    });
+    return isStep ? line : findStep(index - 1)
+  }
+}
