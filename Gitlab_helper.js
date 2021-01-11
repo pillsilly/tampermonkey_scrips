@@ -4,7 +4,7 @@
 // @version      0.1
 // @description  try to take over the world!
 // @author       You
-// @include https://baltig.nsn-net.net/admin-ftw15/admin/merge_requests/*
+// @match        https://gerrit.ext.net.nokia.com/*
 // @grant        none
 // ==/UserScript==
 

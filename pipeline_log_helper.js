@@ -4,7 +4,7 @@
 // @version      0.1
 // @description  try to take over the world!
 // @author       You
-// @include https://baltig.nsn-net.net/admin-ftw15/admin/merge_requests/*
+// @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/?start=0
 // @grant        none
 // ==/UserScript==
 
