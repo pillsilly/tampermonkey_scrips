@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         AutoRetry
+// @name         pipeline log helper
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  try to take over the world!
+// @description  asdfasdf
 // @author       You
 // @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/?start=0
 // @grant        none
