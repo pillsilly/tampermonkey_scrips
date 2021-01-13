@@ -14,7 +14,7 @@ const STEP_PREFIX = [
     'Given '
   ];
   const FAILED_STEP_MARK = '✖ failed';
-  
+  const FAILED_UT_MARK = '' //TODO
   // comment out for nodejs test
   // execute(require('fs').readFileSync('test/1.txt', {encoding: 'utf-8'}));
   // return;
