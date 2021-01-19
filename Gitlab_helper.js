@@ -4,7 +4,7 @@
 // @version      0.1
 // @description  try to take over the world!
 // @author       You
-// @match        https://gerrit.ext.net.nokia.com/*
+// @match        https://baltig.nsn-net.net/admin-ftw15/admin/*
 // @grant        none
 // ==/UserScript==
 
