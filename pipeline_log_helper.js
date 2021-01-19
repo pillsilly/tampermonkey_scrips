@@ -17,8 +17,12 @@ const FAILED_STEP_MARK = '✖ failed';
 const FAILED_STEP_JEST_MARK = '] FAIL';
 
 // comment out for nodejs test
-// execute(require('fs').readFileSync('test/1.txt', {encoding: 'utf-8'}));
-// return;
+if ('object' === typeof (process)) {
+  const testOutput = execute(require('fs').readFileSync('test/utfailed.txt', { encoding: 'utf-8' }));
+  console.log(testOutput)
+  return;
+}
+
 
 (async function () {
   'use strict';
@@ -34,26 +38,10 @@ const FAILED_STEP_JEST_MARK = '] FAIL';
 })();
 
 
-function writeToHtml(records) {
-  const table = document.createElement("table");
-  table.innerHTML = `<thead><tr><td>Line Number</td><td>Scenario</td><td>Step</td><td>Error</td></tr></thead>${records}`;
-  document.body.prepend(table)
-
-  const style = document.createElement('style');
-  style.type = 'text/css';
-  const cssText = 'table, tr, td {border: 1px solid black};';
-  if (style.styleSheet) {
-    style.styleSheet.cssText = cssText;
-  } else {
-    style.appendChild(document.createTextNode(cssText));
-  }
-  document.getElementsByTagName('head')[0].appendChild(style);
-}
-
 function execute(fileContent, writeToHtml) {
   const lines = fileContent.split('\n');
 
-  let sctRecords = '';
+  let sctTRs = '';
   let sctFaileCount = 0;
   lines.forEach((line, index) => {
 
@@ -62,14 +50,19 @@ function execute(fileContent, writeToHtml) {
       const { FAILED_STEP_MARK_LINE_NUMBER, scenarioLine, stepLine, errorLine } = sctInfo;
       const tr = `<tr><td>${FAILED_STEP_MARK_LINE_NUMBER}</td><td>${scenarioLine}</td><td>${stepLine}</td><td>${errorLine}</td></tr>`
       console.info(tr)
-      sctRecords = sctRecords + tr;
-      sctFaileCount++
+      sctTRs = sctTRs + tr;
+      sctFaileCount = sctFaileCount + 1;
     }
-    sctRecords += `<tr><td colspan="3">${sctFaileCount} SCT failed</td><tr>`
- 
+
   });
 
-  if (writeToHtml) writeToHtml(sctRecords);
+  const sctSummary = `<tr><td colspan="4"> <b> ${sctFaileCount} SCT cases were failed <b></td><tr>`;
+  if (writeToHtml) writeToHtml(sctTRs, sctSummary);
+
+  return {
+    sctTRs,
+    sctFaileCount
+  }
 
 
   function recallStepAndScenario(currentIndex) {
@@ -102,4 +95,21 @@ function execute(fileContent, writeToHtml) {
     });
     return isStep ? line : findStep(index - 1)
   }
+}
+
+
+function writeToHtml(sctTrs, sctSummary) {
+  const table = document.createElement("table");
+  table.innerHTML = sctSummary +  `<tr><td>Line Number</td><td>Scenario</td><td>Step</td><td>Error</td></tr>${sctTrs}`;
+  document.body.prepend(table)
+
+  const style = document.createElement('style');
+  style.type = 'text/css';
+  const cssText = 'table, tr, td {border: 1px solid black};';
+  if (style.styleSheet) {
+    style.styleSheet.cssText = cssText;
+  } else {
+    style.appendChild(document.createTextNode(cssText));
+  }
+  document.getElementsByTagName('head')[0].appendChild(style);
 }
