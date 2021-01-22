@@ -1,80 +1,123 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.2
-// @description  try to take over the world!
+// @version      0.3
 // @author       You
 // @match        https://gerrit.ext.net.nokia.com/gerrit/c/MN/MANO/OAMCU/WEBEM/webem/*
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
-    var lastTargetLength = 0;
-    var scheduled = setInterval(attach, 1000);
+    let lastTargetLength = 0;
+    let scheduled = setInterval(attach, 1000);
 
-    function attach(){
+    function attach() {
         console.log('scanning for attaching')
-        const clickTargets = document.querySelectorAll('div.collapsed.hideAvatar');
-
-        lastTargetLength = clickTargets.length;
-
-        if (!clickTargets || !clickTargets.length || (clickTargets.length !== lastTargetLength)) return;
-
+        const clickAbleBanners = document.querySelectorAll('div.collapsed.hideAvatar');
+        lastTargetLength = clickAbleBanners.length;
+        function clickableBannersRendered() {
+            return !clickAbleBanners || !clickAbleBanners.length || (clickAbleBanners.length !== lastTargetLength);
+        }
+        if (clickableBannersRendered()) return;
 
         console.log('clearing scheduled')
         clearInterval(scheduled);
 
         console.log('processing attach')
 
-        console.log(`found ${clickTargets && clickTargets.length} clickTargets`);
-        clickTargets.forEach(session => {
-            session.addEventListener("click", addButtons(session));
-            console.log(`added click to target session`, session)
+        console.log(`found ${clickAbleBanners && clickAbleBanners.length} clickTargets`);
 
-            function addButtons(session){
-                return () => {
-                    console.log(`clicked `, session)
-                    const infoArea = session.querySelector('#container > p:nth-child(2)');
-                    const buttonArea = session.querySelector('div.replyContainer');
-                    const existA = session.querySelector('div.replyContainer>a');
-                    if (existA) return;
-                    if (!infoArea) return;
-                    var text = infoArea.innerText;
-                    var start = text.indexOf('https://')
-                    text = text.slice(start, text.length - 1);
-                    console.log(`text is ${text}`);
-                    text = text.replace(/\r?\n?\s/g, '[break]');
-                    console.log(`text is ${text}`);
-                    var end = text.indexOf('[break]');
-
-                    var link;
-                    if (start >= 0 && end > 10) {
-                        console.log(`slice is ${start} , ${end}`);
-                        link = text.slice(start, end);
-                        console.log(`pipe line link is ${link}`);
-                        const project = link.match(/(jenkins\/(.*)\/detail)/).pop()
-                        console.log(`project is ${project}`)
-                        const pplNumber = link.split('/').pop();
-                        const logLink2 = ` https://oam-cci.japco.scm.nsn-rdnet.net/blue/rest/organizations/jenkins/pipelines/${project}/runs/${pplNumber}/log/?start=0`
-                        console.log(`log line link is ${logLink2}`);
-
-                        const buttonArea = session.querySelector('div.replyContainer');
-                        var a = document.createElement("a");
-                        a.setAttribute("href", logLink2);
-                        a.setAttribute("target", '_blank');
-                        a.innerHTML = 'pipeline log'
-                        buttonArea.appendChild(a)
-                        console.log(`append is done`, buttonArea);
-
-                    }
-                }
-            }
-        })
+        createPipeLineLinks(clickAbleBanners);
+        createRetryButtons();
     }
 
+    function createPipeLineLinks(clickAbleBanners) {
+        clickAbleBanners
+            .forEach((target) => target.addEventListener("click", createPipeLineLink(target)))
+    }
+
+    function createPipeLineLink(session) {
+        return () => {
+            console.log(`clicked `, session)
+            const infoArea = session.querySelector('#container > p:nth-child(2)');
+            const replyContainerExist = !!session.querySelector('div.replyContainer>a');
+            if (replyContainerExist) return;
+            if (!infoArea) return;
+
+            let infoAreaText = infoArea.innerText;
+            let start = infoAreaText.indexOf('https://');
+            infoAreaText = infoAreaText.slice(start, infoAreaText.length - 1);
+            console.log(`text is ${infoAreaText}`);
+            infoAreaText = infoAreaText.replace(/\r?\n?\s/g, '[break]');
+            console.log(`text is ${infoAreaText}`);
+            let end = infoAreaText.indexOf('[break]');
 
 
+            if (!(start >= 0 && end > 10)) {
+                console.log('not a place to add pipe line link');
+                return;
+            }
 
+            let link;
+            link = infoAreaText.slice(start, end);
+            const project = link.match(/(jenkins\/(.*)\/detail)/).pop()
+            console.log(`project is ${project}`)
+            const pipeLineId = link.split('/').pop();
+            const pipeLineLinkLog = ` https://oam-cci.japco.scm.nsn-rdnet.net/blue/rest/organizations/jenkins/pipelines/${project}/runs/${pipeLineId}/log/?start=0`
+            console.log(`log line link is ${pipeLineLinkLog}`);
+            const replyContainer = session.querySelector('div.replyContainer');
+            let aTag = document.createElement("a");
+            aTag.setAttribute("href", pipeLineLinkLog);
+            aTag.setAttribute("target", '_blank');
+            aTag.innerHTML = 'pipeline log'
+            replyContainer.appendChild(aTag)
+            console.log(`append is done`, replyContainer);
+        }
+    }
+
+    function createRetryButtons() {
+        ['FORCE_REBUILD', 'RECHECK_PIT', 'RECHECK']
+            .forEach(createButton)
+    }
+
+    function createButton(text) {
+        const btn = document.createElement('button');
+        btn.innerHTML = text;
+        btn.style.cssText = 'margin-left: 20px';
+        btn.onclick = () => sendRetryMessage(text);
+        document.querySelector('gr-messages-list').appendChild(btn);
+    }
+
+    function sendRetryMessage(msg) {
+        const crNumber = window.location.href.split('/').pop();
+        const patchSetNumber = document.querySelector('#patchNumDropdown select option').innerText.trim();
+        const url = `https://gerrit.ext.net.nokia.com/gerrit/changes/MN%2FMANO%2FOAMCU%2FWEBEM%2Fwebem~${crNumber}/revisions/${patchSetNumber}/review`
+        const XSRF_TOKEN = document.cookie.split(';').find(p => p.trim().startsWith('XSRF_TOKEN')).split('=')[1];
+        fetch(url, {
+            "headers": {
+                "accept": "*/*",
+                "accept-language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
+                "content-type": "application/json",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "x-gerrit-auth": XSRF_TOKEN
+            },
+            "body": `{\"drafts\":\"PUBLISH_ALL_REVISIONS\",\"labels\":{},\"message\":\"${msg}\",\"reviewers\":[]}`,
+            "method": "POST",
+            "mode": "cors",
+            "credentials": "include"
+        }).then((resp) => {
+            if (!resp.ok) {
+                console.log(`Failed send ${msg}`, resp);
+                return ;
+            }
+            const shouldReload = confirm(`Successfully send ${msg}, reload page now?`);
+            if (shouldReload) {
+                window.location.reload()
+            }
+        });
+    }
 })();
