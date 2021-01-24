@@ -92,7 +92,7 @@
 
     function sendRetryMessage(msg) {
         const crNumber = window.location.href.split('/').pop();
-        const patchSetNumber = document.querySelector('#patchNumDropdown select option').innerText.trim();
+        const patchSetNumber = document.querySelector('#patchNumDropdown #triggerText').innerText.trim().split(' ').pop();
         const url = `https://gerrit.ext.net.nokia.com/gerrit/changes/MN%2FMANO%2FOAMCU%2FWEBEM%2Fwebem~${crNumber}/revisions/${patchSetNumber}/review`
         const XSRF_TOKEN = document.cookie.split(';').find(p => p.trim().startsWith('XSRF_TOKEN')).split('=')[1];
         fetch(url, {
