@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @author       You
 // @match        https://gerrit.ext.net.nokia.com/gerrit/c/MN/MANO/OAMCU/WEBEM/webem/*
 // @grant        none
@@ -65,7 +65,7 @@
             const project = link.match(/(jenkins\/(.*)\/detail)/).pop()
             console.log(`project is ${project}`)
             const pipeLineId = link.split('/').pop();
-            const pipeLineLinkLog = ` https://oam-cci.japco.scm.nsn-rdnet.net/blue/rest/organizations/jenkins/pipelines/${project}/runs/${pipeLineId}/log/?start=0`
+            const pipeLineLinkLog = ` https://oam-cci.japco.scm.nsn-rdnet.net/blue/rest/organizations/jenkins/pipelines/${project}/runs/${pipeLineId}/log/?`
             console.log(`log line link is ${pipeLineLinkLog}`);
             const replyContainer = session.querySelector('div.replyContainer');
             let aTag = document.createElement("a");
