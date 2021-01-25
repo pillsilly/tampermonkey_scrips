@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         pipeline log helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1.2
+// @version      0.1.3
 // @description  pipeline log helper
 // @author       Frank
-// @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/?start=0
+// @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/log/
 // @grant        none
 // ==/UserScript==
 
@@ -32,6 +32,7 @@ if ('object' === typeof (process)) {
   const fileContent = await fetch(logLink2).then(body => body.text());
   //const fileContent = document.querySelector('body>pre').textContent;
   console.log('file content', fileContent);
+  //document.querySelector('body>pre').innerText = fileContent;
   execute(fileContent, writeToHtml);
 
   console.log('pipe line log helper done');
@@ -56,7 +57,7 @@ function execute(fileContent, writeToHtml) {
 
   });
 
-  const sctSummary = `<tr><td colspan="4"> <b> ${sctFaileCount} SCT cases were failed <b></td><tr>`;
+  const sctSummary = `<tr><td colspan="4"> <b> ${sctFaileCount} SCT cases were failed<b></td><tr>`;
   if (writeToHtml) writeToHtml(sctTRs, sctSummary);
 
   return {
