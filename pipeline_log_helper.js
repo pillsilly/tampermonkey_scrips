@@ -33,13 +33,13 @@ if ('object' === typeof (process)) {
   //const fileContent = document.querySelector('body>pre').textContent;
   console.log('file content', fileContent);
   //document.querySelector('body>pre').innerText = fileContent;
-  execute(fileContent, writeToHtml);
+  execute(fileContent, writeToHtml, logLink2);
 
   console.log('pipe line log helper done');
 })();
 
 
-function execute(fileContent, writeToHtml) {
+function execute(fileContent, writeToHtml, downloadLink) {
   const lines = fileContent.split('\n');
 
   let sctTRs = '';
@@ -57,7 +57,7 @@ function execute(fileContent, writeToHtml) {
 
   });
 
-  const sctSummary = `<tr><td colspan="4"> <b> ${sctFaileCount} SCT cases were failed<b></td><tr>`;
+  const sctSummary = `<tr><td colspan="4"> <b> <a href='${downloadLink}'> ${sctFaileCount} SCT cases were failed (click to download full log) <a><b></td><tr>`;
   if (writeToHtml) writeToHtml(sctTRs, sctSummary);
 
   return {
