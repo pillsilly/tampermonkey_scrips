@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         pipeline log helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1.3
+// @version      0.1.4
 // @description  pipeline log helper
 // @author       Frank
 // @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/log/
@@ -28,10 +28,11 @@ if ('object' === typeof (process)) {
   'use strict';
   console.log('pipe line log helper executing');
 
-  const logLink2 = `${window.location.href}&download=true`
+  const logLink2 = `${window.location.href}start=0&download=true`
+
   const fileContent = await fetch(logLink2).then(body => body.text());
   //const fileContent = document.querySelector('body>pre').textContent;
-  console.log('file content', fileContent);
+  //console.log('file content', fileContent);
   //document.querySelector('body>pre').innerText = fileContent;
   execute(fileContent, writeToHtml, logLink2);
 
@@ -57,7 +58,7 @@ function execute(fileContent, writeToHtml, downloadLink) {
 
   });
 
-  const sctSummary = `<tr><td colspan="4"> <b> <a href='${downloadLink}'> ${sctFaileCount} SCT cases were failed (click to download full log) <a><b></td><tr>`;
+  const sctSummary = `<tr><td colspan="4"> <b> <a href='${downloadLink}'> ${sctFaileCount} SCT cases were failed <a><b></td><tr>`;
   if (writeToHtml) writeToHtml(sctTRs, sctSummary);
 
   return {
