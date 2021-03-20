@@ -9,8 +9,8 @@
 // ==/UserScript==
 
 const STEP_PREFIX = [
-  'When I',
-  'And I',
+  'When ',
+  'And ',
   'Given '
 ];
 const FAILED_STEP_MARK = '✖ failed';
