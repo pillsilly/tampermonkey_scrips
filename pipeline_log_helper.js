@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         pipeline log helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1.5
+// @version      0.1.6
 // @description  pipeline log helper
 // @author       Frank
-// @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/log/
+// @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/log/*
 // @grant        none
 // ==/UserScript==
 
@@ -28,7 +28,11 @@ if ('object' === typeof (process)) {
   'use strict';
   console.log('pipe line log helper executing');
 
-  const logLink2 = `${window.location.href}start=0&download=true`
+  const htmlparts = window.location.href.split('?');
+
+  const head = (htmlparts && htmlparts.length > 0 ) ? window.location.href.split('?')[0]: window.location.href;
+
+  const logLink2 = `${head}?start=0&download=true`
 
   const fileContent = await fetch(logLink2).then(body => body.text());
   //const fileContent = document.querySelector('body>pre').textContent;
@@ -58,7 +62,7 @@ function execute(fileContent, writeToHtml, downloadLink) {
 
   });
 
-  const sctSummary = `<tr><td colspan="4"> <b> <a href='${downloadLink}'> ${sctFaileCount} SCT cases were failed <a><b></td><tr>`;
+  const sctSummary = `<tr><td colspan="4"> <b> ${sctFaileCount} SCT cases were failed </b>  <a href='${downloadLink}'> click to download full log </a></td></tr>`;
   if (writeToHtml) writeToHtml(sctTRs, sctSummary);
 
   return {
