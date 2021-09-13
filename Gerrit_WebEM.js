@@ -31,8 +31,13 @@
 
         createPipeLineLinks(clickAbleBanners);
         createRetryButtons();
+        createCopyPathButtons();
     }
 
+    function createCopyPathButtons () {
+            $$('.fullFileName').forEach(z => {z.parentElement.appendChild((()=> {var b = document.createElement('button');b.innerHTML="button";return b})()).addEventListener('click', (event) => {console.log('clicked');event.stopPropagation();event.preventDefault(); navigator.clipboard.writeText(event.target.previousElementSibling.attributes.title.value)}, {} , true)})
+    }
+    
     function createPipeLineLinks(clickAbleBanners) {
         clickAbleBanners
             .forEach((target) => target.addEventListener("click", createPipeLineLink(target)))
