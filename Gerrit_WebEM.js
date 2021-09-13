@@ -11,27 +11,34 @@
     'use strict';
 
     let lastTargetLength = 0;
-    let scheduled = setInterval(attach, 1000);
+    let tryToAddButtons$ = setInterval(tryToAddButtons, 1000);
 
-    function attach() {
+    let tryToAddCopyPathButtons$ = setInterval(tryToAddCopyPathButtons, 1000);
+
+
+    function tryToAddButtons() {
         console.log('scanning for attaching')
         const clickAbleBanners = document.querySelectorAll('div.collapsed.hideAvatar');
         lastTargetLength = clickAbleBanners.length;
-        function clickableBannersRendered() {
+        function isRenderingBanners() {
             return !clickAbleBanners || !clickAbleBanners.length || (clickAbleBanners.length !== lastTargetLength);
         }
-        if (clickableBannersRendered()) return;
-
-        console.log('clearing scheduled')
-        clearInterval(scheduled);
-
-        console.log('processing attach')
-
-        console.log(`found ${clickAbleBanners && clickAbleBanners.length} clickTargets`);
+        if (isRenderingBanners()) return;
 
         createPipeLineLinks(clickAbleBanners);
         createRetryButtons();
-        createCopyPathButtons();
+        clearInterval(tryToAddButtons$);
+    }
+
+    function tryToAddCopyPathButtons() {
+        const copyFilePathBtns = document.querySelectorAll('button[name="copyFilePath"]');
+        const fileRow = document.querySelectorAll('.file-row');
+
+        if (!copyFilePathBtns?.length && fileRow && fileRow.length) {
+            createCopyPathButtons();
+            clearInterval(tryToAddCopyPathButtons$);
+        }
+
     }
 
     function createCopyPathButtons() {
@@ -41,7 +48,9 @@
         function createPathButton(item, index) {
             if (index === 0) return;
 
-            const button = document.createElement('button'); button.innerHTML = "Copy File Path";
+            const button = document.createElement('button'); 
+            button.innerHTML = "Copy File Path";
+            button.setAttribute('name','copyFilePath');
 
             item.parentElement
                 .appendChild(button)
@@ -58,6 +67,8 @@
     function createPipeLineLinks(clickAbleBanners) {
         clickAbleBanners
             .forEach((target) => target.addEventListener("click", createPipeLineLink(target)))
+        
+        console.log(`PipeLineLinks created`);
     }
 
     function createPipeLineLink(session) {
@@ -110,6 +121,7 @@
         btn.style.cssText = 'margin-left: 20px';
         btn.onclick = () => sendRetryMessage(text);
         document.querySelector('gr-messages-list').appendChild(btn);
+        console.log(`retry button created`);
     }
 
     function sendRetryMessage(msg) {
