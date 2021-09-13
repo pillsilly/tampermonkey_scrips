@@ -34,8 +34,25 @@
         createCopyPathButtons();
     }
 
-    function createCopyPathButtons () {
-            $$('.fullFileName').forEach(z => {z.parentElement.appendChild((()=> {var b = document.createElement('button');b.innerHTML="button";return b})()).addEventListener('click', (event) => {console.log('clicked');event.stopPropagation();event.preventDefault(); navigator.clipboard.writeText(event.target.previousElementSibling.attributes.title.value)}, {} , true)})
+    function createCopyPathButtons() {
+        document.querySelectorAll('.fullFileName')
+            .forEach(createPathButton)
+
+        function createPathButton(item, index) {
+            if (index === 0) return;
+
+            const button = document.createElement('button'); button.innerHTML = "Copy File Path";
+
+            item.parentElement
+                .appendChild(button)
+                .addEventListener('click',
+                    (event) => {
+                        console.log('clicked');
+                        event.preventDefault();
+                        navigator.clipboard.writeText(event.target.previousElementSibling.attributes.title.value)
+                    }, {}, true
+                )
+        }
     }
     
     function createPipeLineLinks(clickAbleBanners) {
