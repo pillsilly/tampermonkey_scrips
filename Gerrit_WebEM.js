@@ -10,6 +10,7 @@
 (function () {
     'use strict';
 
+
     let lastTargetLength = 0;
     let tryToAddButtons$ = setInterval(tryToAddButtons, 1000);
 
@@ -24,6 +25,13 @@
             return !clickAbleBanners || !clickAbleBanners.length || (clickAbleBanners.length !== lastTargetLength);
         }
         if (isRenderingBanners()) return;
+
+
+        [...document.querySelectorAll('#downloadCommands .commandContainer input')].map(x => {
+            const temp = document.createElement('div');
+            temp.innerHTML=x.value;
+            document.querySelector('#commitMessage').parentElement.appendChild(temp);
+        })
 
         createPipeLineLinks(clickAbleBanners);
         createRetryButtons();
