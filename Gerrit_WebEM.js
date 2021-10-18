@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.6
 // @author       You
 // @match        https://gerrit.ext.net.nokia.com/gerrit/c/MN/MANO/OAMCU/WEBEM/webem/*
 // @grant        none
