@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         pipeline log helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1.6
+// @version      0.1.7
 // @description  pipeline log helper
 // @author       Frank
 // @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/log/*
@@ -87,7 +87,7 @@ function execute(fileContent, writeToHtml, downloadLink) {
 
   function findScenario(index) {
     const line = lines[index];
-    if (line.indexOf('Scenario:') >= 0) {
+    if (line.indexOf('Scenario:') >= 0 || line.indexOf('Scenario Outline:') >= 0) {
       return line;
     }
 
