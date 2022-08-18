@@ -15,6 +15,7 @@
     let lastTargetLength = 0;
     let tryToAddButtons$;
     let tryToAddCopyPathButtons$;
+    let tryToAddDashboardDirectLinks$;
 
     waitForKeyElements(
         '.headerTitle > .headerSubject',
@@ -24,11 +25,103 @@
             tryToAddButtons$ && clearInterval(tryToAddButtons$);
             tryToAddCopyPathButtons$ && clearInterval(tryToAddCopyPathButtons$);
 
-
             tryToAddButtons$ = setInterval(tryToAddButtons, 1000);
             tryToAddCopyPathButtons$ = setInterval(tryToAddCopyPathButtons, 1000);
         }
     );
+
+     waitForKeyElements(
+            'gr-change-list-item',
+            () => {
+                tryToAddDashboardDirectLinks$ && clearInterval(tryToAddDashboardDirectLinks$);
+
+                tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 5000);
+            }
+        );
+
+    function tryToAddDashboardDirectLinks () {
+        console.log('tryToAddDashboardDirectLinks in');
+        execute();
+        async function execute() {
+
+            const list = findList ();
+            if(!list?.length) {
+                console.log("no cr list found yet")
+                return;
+            }
+
+            console.log("no cr list rendered");
+            clearInterval(tryToAddDashboardDirectLinks$);
+
+            for await (const item of list ){
+                const {linkA, statusTd} = item;
+                const href = linkA.getAttribute('href');
+                const crlink = window.location.origin + href;
+
+                const verLink = await getLatestVerLink(crlink);
+                const linkOfVerPipeline = document.createElement("a");
+                linkOfVerPipeline.innerHTML = "link!";
+                linkOfVerPipeline.setAttribute("href", verLink);
+                linkOfVerPipeline.setAttribute("target", '_blank');
+                statusTd.prepend(linkOfVerPipeline);
+            }
+
+            console.log(list.length + "item proceeded");
+
+        }
+
+        function findList () {
+            const visibleLists = [...document.querySelectorAll('gr-change-list-item')].map(function (tr) {
+                const linkA = tr.querySelector('td.subject  a.gr-change-list-item');
+                const statusTd = tr.querySelector('td.status');
+                return { linkA, statusTd}
+            });
+
+
+            const list =  visibleLists.slice(0,visibleLists.length > 2? 2 :visibleLists.length);
+            console.log(`list length: ${list.length}`);
+            return list;
+        }
+
+        async function getLatestVerLink (crlink) {
+
+            const text = await fetch(getDetailUrl(crlink)).then(body => body.text());
+            const normalizedStr = normalizeToJsonStr(text);
+            const detailData = JSON.parse(normalizedStr);
+
+            const startingMsges = detailData.messages.filter(m => isStartingVerMessage(m.message));
+
+            const latestStartingMsg = startingMsges.pop();
+
+            const latest_VER_URL = latestStartingMsg.message.split('Starting VERIFICATION:').pop().trim()
+
+            console.log(latest_VER_URL);
+
+            return latest_VER_URL;
+        }
+
+        function normalizeToJsonStr(str) {
+            let tmpArray = str.split('\n');
+            tmpArray.shift();
+
+            const jsonArray = tmpArray.join('');
+            return jsonArray;
+        }
+
+        function isStartingVerMessage(msgText) {
+            return msgText.indexOf('Starting VERIFICATION') > 0;
+        }
+
+        function getDetailUrl (crlink) {
+            const origin = window.location.origin;
+            const changeId = crlink.split('/').pop();
+
+            return `${origin}/gerrit/changes/MN%2FMANO%2FOAMCU%2FWEBEM%2Fwebem~${changeId}/detail`
+        }
+
+
+
+    }
 
     function tryToAddButtons() {
         console.log('tryToAddButtons');
