@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.71
+// @version      0.72
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -40,6 +40,7 @@
         );
 
     function tryToAddDashboardDirectLinks () {
+        const toBeResolveNumber = 4;
         console.log('tryToAddDashboardDirectLinks in');
         execute();
         async function execute() {
@@ -78,7 +79,7 @@
             });
 
 
-            const list =  visibleLists.slice(0,visibleLists.length > 2? 2 :visibleLists.length);
+            const list =  visibleLists.slice(0,visibleLists.length > toBeResolveNumber? toBeResolveNumber :visibleLists.length);
             console.log(`list length: ${list.length}`);
             return list;
         }
