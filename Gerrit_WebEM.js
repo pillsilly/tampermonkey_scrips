@@ -55,6 +55,8 @@
             console.log("cr list rendered");
             addedLinks.forEach(e => {e.remove()});
             addedLinks = [];
+            const d = new Date();
+            const updateStr = `${d.getHours()}: ${d.getMinutes()} : ${d.getSeconds()}`
             for await (const item of list ){
                 const {linkA, statusTd} = item;
                 const href = linkA.getAttribute('href');
@@ -62,7 +64,7 @@
 
                 const verLink = await getLatestVerLink(crlink);
                 const linkOfVerPipeline = document.createElement("a");
-                linkOfVerPipeline.innerHTML = "link!";
+                linkOfVerPipeline.innerHTML = `↗Pipeline link(${updateStr})  `;
                 linkOfVerPipeline.setAttribute("href", verLink);
                 linkOfVerPipeline.setAttribute("target", '_blank');
                 statusTd.prepend(linkOfVerPipeline);
