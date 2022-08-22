@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.72
+// @version      0.73
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -16,7 +16,7 @@
     let tryToAddButtons$;
     let tryToAddCopyPathButtons$;
     let tryToAddDashboardDirectLinks$;
-
+    let addedLinks = [];
     waitForKeyElements(
         '.headerTitle > .headerSubject',
         () => {
@@ -31,11 +31,12 @@
     );
 
      waitForKeyElements(
-            'gr-change-list-item',
+            '#changeList',
             () => {
                 tryToAddDashboardDirectLinks$ && clearInterval(tryToAddDashboardDirectLinks$);
 
-                tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 5000);
+                setTimeout(tryToAddDashboardDirectLinks, 4000);
+                tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 600000);
             }
         );
 
@@ -51,9 +52,9 @@
                 return;
             }
 
-            console.log("no cr list rendered");
-            clearInterval(tryToAddDashboardDirectLinks$);
-
+            console.log("cr list rendered");
+            addedLinks.forEach(e => {e.remove()});
+            addedLinks = [];
             for await (const item of list ){
                 const {linkA, statusTd} = item;
                 const href = linkA.getAttribute('href');
@@ -65,6 +66,7 @@
                 linkOfVerPipeline.setAttribute("href", verLink);
                 linkOfVerPipeline.setAttribute("target", '_blank');
                 statusTd.prepend(linkOfVerPipeline);
+                addedLinks.push(linkOfVerPipeline)
             }
 
             console.log(list.length + "item proceeded");
