@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.73
+// @version      0.74
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require  https://gist.github.com/raw/2625891/waitForKeyElements.js
+// @grant GM_addStyle
+
 // ==/UserScript==
 
 (function () {
@@ -62,9 +64,26 @@
                 const href = linkA.getAttribute('href');
                 const crlink = window.location.origin + href;
 
-                const verLink = await getLatestVerLink(crlink);
+                const {verLink, verStatus} = await getCrLinkDetail(crlink);
                 const linkOfVerPipeline = document.createElement("a");
-                linkOfVerPipeline.innerHTML = `↗Pipeline link(${updateStr})  `;
+                let icon = 'Ongoing';
+                if(verStatus === 0) {
+                    linkOfVerPipeline.setAttribute("class", 'spinner');
+                }
+
+                if(verStatus === 1) {
+                    icon = '✔'
+                    linkOfVerPipeline.setAttribute("class", 'u-green');
+                }
+
+                if(verStatus <= -1) {
+                    icon = '❌'
+                    linkOfVerPipeline.setAttribute("class", 'u-red');
+                }
+
+                linkOfVerPipeline.innerHTML = `${icon}(${updateStr})  `;
+
+
                 linkOfVerPipeline.setAttribute("href", verLink);
                 linkOfVerPipeline.setAttribute("target", '_blank');
                 statusTd.prepend(linkOfVerPipeline);
@@ -82,13 +101,12 @@
                 return { linkA, statusTd}
             });
 
-
             const list =  visibleLists.slice(0,visibleLists.length > toBeResolveNumber? toBeResolveNumber :visibleLists.length);
             console.log(`list length: ${list.length}`);
             return list;
         }
 
-        async function getLatestVerLink (crlink) {
+        async function getCrLinkDetail (crlink) {
 
             const text = await fetch(getDetailUrl(crlink)).then(body => body.text());
             const normalizedStr = normalizeToJsonStr(text);
@@ -102,7 +120,10 @@
 
             console.log(latest_VER_URL);
 
-            return latest_VER_URL;
+            const pplVerifiedDetails = detailData.labels.Verified.all.find(item => item.username === 'ca_psscm');
+
+
+            return {verLink:latest_VER_URL, verStatus: pplVerifiedDetails.value};
         }
 
         function normalizeToJsonStr(str) {
@@ -278,4 +299,27 @@
         });
     }
 
+    const css = `@keyframes spinner {
+  to {transform: rotate(360deg);}
+}
+
+.spinner:before {
+    vertical-align: text-bottom;
+    content: '';
+    display: inline-block;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    margin-left: -10px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    border-top-color: #000;
+    animation: spinner 1s linear infinite;
+}`
+
+GM_addStyle(css)
+
+
 })();
+
