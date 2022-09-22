@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.74
+// @version      0.75
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -65,6 +65,9 @@
                 const crlink = window.location.origin + href;
 
                 const {verLink, verStatus} = await getCrLinkDetail(crlink);
+
+                if(!verLink){ continue;}
+
                 const linkOfVerPipeline = document.createElement("a");
                 let icon = 'Ongoing';
                 if(verStatus === 0) {
@@ -81,7 +84,7 @@
                     linkOfVerPipeline.setAttribute("class", 'u-red');
                 }
 
-                linkOfVerPipeline.innerHTML = `${icon}(${updateStr})  `;
+                linkOfVerPipeline.innerHTML = `${icon}(${updateStr})`;
 
 
                 linkOfVerPipeline.setAttribute("href", verLink);
@@ -110,6 +113,9 @@
 
             const text = await fetch(getDetailUrl(crlink)).then(body => body.text());
             const normalizedStr = normalizeToJsonStr(text);
+            if(!normalizedStr) {
+                return {verLink:'', verStatus: ''}
+            }
             const detailData = JSON.parse(normalizedStr);
 
             const startingMsges = detailData.messages.filter(m => isStartingVerMessage(m.message));
