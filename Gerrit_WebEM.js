@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.75
+// @version      0.76
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -163,7 +163,6 @@
         lastTargetLength = clickAbleBanners.length;
         function isRenderingBanners() {
             return !relatedChanges || !clickAbleBanners || !clickAbleBanners.length || (clickAbleBanners.length !== lastTargetLength);
-
         }
         if (isRenderingBanners()) return;
 
@@ -173,6 +172,10 @@
             temp.innerHTML = x.value;
             document.querySelector('#commitMessage').parentElement.appendChild(temp);
         });
+        // add copy fetch command button
+        document.querySelector('#commitMessage')
+            .parentElement
+            .appendChild(createButtonToFetchLatestPatchCommit());
 
         createPipeLineLinks(clickAbleBanners);
         createRetryButtons();
@@ -303,6 +306,23 @@
                 window.location.reload();
             }
         });
+    }
+
+    function createButtonToFetchLatestPatchCommit() {
+        const ele = document.querySelector('#downloadCommands .commandContainer input')
+        const eleValue = ele.value ; //git fetch "ssh://frawu@gerrit.ext.net.nokia.com:29418/MN/MANO/OAMCU/WEBEM/webem" refs/changes/41/5016741/3
+        const gitCmd = eleValue.split('&&')[0];
+        const button = document.createElement('button');
+        button.innerHTML = "Copy Command Fetch newest commit";
+        button.addEventListener('click',
+                                (event) => {
+            console.log('clicked');
+            event.preventDefault();
+            navigator.clipboard.writeText(gitCmd + ' && git log FETCH_HEAD -1');
+        }, {}, true
+                               )
+
+        return button;
     }
 
     const css = `@keyframes spinner {
