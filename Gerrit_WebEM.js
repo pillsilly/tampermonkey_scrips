@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.76
+// @version      0.77
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -43,7 +43,7 @@
         );
 
     function tryToAddDashboardDirectLinks () {
-        const toBeResolveNumber = 4;
+        const toBeResolveNumber = 6;
         console.log('tryToAddDashboardDirectLinks in');
         execute();
         async function execute() {
