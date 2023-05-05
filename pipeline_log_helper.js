@@ -4,7 +4,7 @@
 // @version      0.1.7
 // @description  pipeline log helper
 // @author       Frank
-// @match        https://oam-cci.japco.scm.nsn-rdnet.net/**/log/*
+// @match        https://oam-cci.oam.scm.nsn-rdnet.net/**/log/*
 // @grant        none
 // ==/UserScript==
 

@@ -48,11 +48,11 @@ Running on light_ci in /ephemeral/node/workspace/VER__MN.MANO.OAMCU.WEBEM.webem_
 [Pipeline] echo
 [2021-01-12T15:12:51.541Z] Sending notification attempt: 0
 [Pipeline] sh
-[2021-01-12T15:12:52.042Z] + echo 'Sending: Starting VERIFICATION: https://oam-cci.japco.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
+[2021-01-12T15:12:52.042Z] + echo 'Sending: Starting VERIFICATION: https://oam-cci.oam.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
 [2021-01-12T15:12:52.042Z] Environment: 546a824'
-[2021-01-12T15:12:52.042Z] Sending: Starting VERIFICATION: https://oam-cci.japco.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
+[2021-01-12T15:12:52.042Z] Sending: Starting VERIFICATION: https://oam-cci.oam.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
 [2021-01-12T15:12:52.042Z] Environment: 546a824
-[2021-01-12T15:12:52.042Z] + timeout 3m ssh -p 29418 gerrit.ext.net.nokia.com gerrit review 2686651,4 '--message='\''Starting VERIFICATION: https://oam-cci.japco.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
+[2021-01-12T15:12:52.042Z] + timeout 3m ssh -p 29418 gerrit.ext.net.nokia.com gerrit review 2686651,4 '--message='\''Starting VERIFICATION: https://oam-cci.oam.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
 [2021-01-12T15:12:52.042Z] Environment: 546a824'\''' --label Verified=0
 [Pipeline] fileExists
 [Pipeline] echo
@@ -247,7 +247,7 @@ Collecting data about 100 previous runs
 [Pipeline] parallel
 [Pipeline] { (Branch: checking.message)
 [Pipeline] echo
-Re-jamniking checking.message from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking checking.message from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage checking.message
 [Pipeline] }
@@ -259,7 +259,7 @@ Skipped stage checking.message
 [Pipeline] parallel
 [Pipeline] { (Branch: Affected_Code_Style_Check)
 [Pipeline] echo
-Re-jamniking Affected_Code_Style_Check from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking Affected_Code_Style_Check from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage Affected_Code_Style_Check
 [Pipeline] }
@@ -285,57 +285,57 @@ Skipped stage Affected_Code_Style_Check
 [Pipeline] { (Branch: BUILD_STORYBOOK)
 [Pipeline] { (Branch: BUILD_VDU)
 [Pipeline] echo
-Re-jamniking SCT_CU_VER_0.35 from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking SCT_CU_VER_0.35 from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage SCT_CU_VER_0.35
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking SCT_CU_VER_45.65 from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking SCT_CU_VER_45.65 from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage SCT_CU_VER_45.65
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking SCT_CU_VER_65.95 from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking SCT_CU_VER_65.95 from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage SCT_CU_VER_65.95
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking SCT_CU_VER_95.0 from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking SCT_CU_VER_95.0 from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage SCT_CU_VER_95.0
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking SCT_VDU_VER_0.35 from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking SCT_VDU_VER_0.35 from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage SCT_VDU_VER_0.35
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking SCT_VDU_VER_35.45 from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking SCT_VDU_VER_35.45 from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage SCT_VDU_VER_35.45
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking SCT_VDU_VER_45.65 from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking SCT_VDU_VER_45.65 from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage SCT_VDU_VER_45.65
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking SCT_STORYBOOK from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking SCT_STORYBOOK from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage SCT_STORYBOOK
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking BUILD_CU from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking BUILD_CU from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage BUILD_CU
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking BUILD_STORYBOOK from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking BUILD_STORYBOOK from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage BUILD_STORYBOOK
 [Pipeline] }
 [Pipeline] echo
-Re-jamniking BUILD_VDU from https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
+Re-jamniking BUILD_VDU from https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1168/
 [Pipeline] echo
 Skipped stage BUILD_VDU
 [Pipeline] }
@@ -28984,7 +28984,7 @@ Running on oam-cci-k8s-plugin-oam6-ohn42-dynamic-155 in /ephemeral/node/workspac
 [2021-01-12T16:03:29.554Z] Coop test-type ut was renamed to ut.
 [Pipeline] sh
 [2021-01-12T16:03:29.883Z] + shopt -s globstar
-[2021-01-12T16:03:29.885Z] + python3 /ephemeral/node/workspace/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/../ci/tools/scm_coop_client/scm_coop_client.py --verbose --env-japco-build --commitrepo gerrit.ext.net.nokia.com:MN/MANO/OAMCU/WEBEM/webem:master --test-result FAIL --test-start 1610465114597 --test-end 1610467391616 --test-name ut --test-url https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170/ --sc WEBEM --log-append --log-path ./coop_ut_Testing-and-building_UT.log --send-api --test-custom 'gerritserver gerrit.ext.net.nokia.com' --test-custom 'project MN/MANO/OAMCU/WEBEM/webem' --test-custom 'branch master' --revision 2686651 --patchset 4 --junit-files ut-reports/merged-ut-results.xml
+[2021-01-12T16:03:29.885Z] + python3 /ephemeral/node/workspace/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/../ci/tools/scm_coop_client/scm_coop_client.py --verbose --env-japco-build --commitrepo gerrit.ext.net.nokia.com:MN/MANO/OAMCU/WEBEM/webem:master --test-result FAIL --test-start 1610465114597 --test-end 1610467391616 --test-name ut --test-url https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170/ --sc WEBEM --log-append --log-path ./coop_ut_Testing-and-building_UT.log --send-api --test-custom 'gerritserver gerrit.ext.net.nokia.com' --test-custom 'project MN/MANO/OAMCU/WEBEM/webem' --test-custom 'branch master' --revision 2686651 --patchset 4 --junit-files ut-reports/merged-ut-results.xml
 [Pipeline] sh
 [2021-01-12T16:03:30.775Z] + mkdir -p LOCAL_ARTIFACTS/
 [2021-01-12T16:03:30.775Z] + rm -rf LOCAL_ARTIFACTS/coverage
@@ -29028,7 +29028,7 @@ Running on oam-cci-k8s-plugin-oam6-ohn42-dynamic-155 in /ephemeral/node/workspac
 [2021-01-12T16:03:32.251Z] Coop test-type sca was renamed to sca.
 [Pipeline] sh
 [2021-01-12T16:03:32.586Z] + shopt -s globstar
-[2021-01-12T16:03:32.586Z] + python3 /ephemeral/node/workspace/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/../ci/tools/scm_coop_client/scm_coop_client.py --verbose --env-japco-build --commitrepo gerrit.ext.net.nokia.com:MN/MANO/OAMCU/WEBEM/webem:master --test-result FAIL --test-start 1610465114597 --test-end 1610467391616 --test-name sca --test-url https://oam-cci.japco.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170/ --sc WEBEM --log-append --log-path ./coop_sca_Testing-and-building_UT.log --send-api --test-custom 'gerritserver gerrit.ext.net.nokia.com' --test-custom 'project MN/MANO/OAMCU/WEBEM/webem' --test-custom 'branch master' --revision 2686651 --patchset 4 --junit-files ut-reports/merged-ut-results.xml
+[2021-01-12T16:03:32.586Z] + python3 /ephemeral/node/workspace/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/../ci/tools/scm_coop_client/scm_coop_client.py --verbose --env-japco-build --commitrepo gerrit.ext.net.nokia.com:MN/MANO/OAMCU/WEBEM/webem:master --test-result FAIL --test-start 1610465114597 --test-end 1610467391616 --test-name sca --test-url https://oam-cci.oam.scm.nsn-rdnet.net/job/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170/ --sc WEBEM --log-append --log-path ./coop_sca_Testing-and-building_UT.log --send-api --test-custom 'gerritserver gerrit.ext.net.nokia.com' --test-custom 'project MN/MANO/OAMCU/WEBEM/webem' --test-custom 'branch master' --revision 2686651 --patchset 4 --junit-files ut-reports/merged-ut-results.xml
 [Pipeline] sh
 [2021-01-12T16:03:33.462Z] + mkdir -p LOCAL_ARTIFACTS/
 [2021-01-12T16:03:33.462Z] + rm -rf LOCAL_ARTIFACTS/coop_ut_Testing-and-building_UT.log
@@ -29115,21 +29115,21 @@ Currently verifying patchset is the newest one, no need to copy score
 [Pipeline] echo
 Sending notification attempt: 0
 [Pipeline] sh
-+ echo 'Sending: https://oam-cci.japco.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
++ echo 'Sending: https://oam-cci.oam.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
 Result: FAILURE
 
  
  Details:
  Testing and building :: UT :: Build failed during building stage
 '
-Sending: https://oam-cci.japco.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
+Sending: https://oam-cci.oam.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
 Result: FAILURE
 
  
  Details:
  Testing and building :: UT :: Build failed during building stage
 
-+ timeout 3m ssh -p 29418 gerrit.ext.net.nokia.com gerrit review 2686651,4 '--message='\''https://oam-cci.japco.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
++ timeout 3m ssh -p 29418 gerrit.ext.net.nokia.com gerrit review 2686651,4 '--message='\''https://oam-cci.oam.scm.nsn-rdnet.net/blue/organizations/jenkins/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/detail/VER__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/1170
 Result: FAILURE
 
  

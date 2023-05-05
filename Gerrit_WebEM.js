@@ -251,7 +251,7 @@
             const project = link.match(/(jenkins\/(.*)\/detail)/).pop();
             console.log(`project is ${project}`);
             const pipeLineId = link.split('/').pop();
-            const pipeLineLinkLog = ` https://oam-cci.japco.scm.nsn-rdnet.net/blue/rest/organizations/jenkins/pipelines/${project}/runs/${pipeLineId}/log/?`;
+            const pipeLineLinkLog = ` https://oam-cci.oam.scm.nsn-rdnet.net/blue/rest/organizations/jenkins/pipelines/${project}/runs/${pipeLineId}/log/?`;
             console.log(`log line link is ${pipeLineLinkLog}`);
             const replyContainer = session.querySelector('div.replyContainer');
             let aTag = document.createElement("a");
