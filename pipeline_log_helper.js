@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         pipeline log helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1.7
+// @version      0.1.8
 // @description  pipeline log helper
 // @author       Frank
 // @match        https://oam-cci.oam.scm.nsn-rdnet.net/**/log/*

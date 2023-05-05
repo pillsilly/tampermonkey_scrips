@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ADMIN scripts
 // @namespace    http://tampermonkey.net/
-// @version      0.1.7
+// @version      0.1.8
 // @description  try to take over the world!
 // @author       You
 // @include https://10.**
