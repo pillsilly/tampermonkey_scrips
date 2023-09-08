@@ -123,11 +123,11 @@
             const latestStartingMsg = startingMsges.pop();
 
             const latest_VER_URL = latestStartingMsg.message.split('Starting VERIFICATION:').pop().trim()
-
+            
             console.log(latest_VER_URL);
 
             const pplVerifiedDetails = detailData.labels.Verified.all.find(item => item.username === 'ca_psscm');
-
+            if(detailData.labels.Verified.approved) pplVerifiedDetails.value = 1;
 
             return {verLink:latest_VER_URL, verStatus: pplVerifiedDetails.value};
         }
