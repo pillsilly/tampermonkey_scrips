@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.80
+// @version      0.81
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -265,7 +265,7 @@
     }
 
     function createRetryButtons() {
-        ['FORCE_REBUILD', 'RECHECK_PIT', 'RECHECK']
+        ['RECHECK_ALL', 'RECHECK_PIT', 'RECHECK']
             .forEach(createButton);
     }
 
