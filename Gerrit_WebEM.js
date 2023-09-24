@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.81
+// @version      0.82
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -32,15 +32,15 @@
         }
     );
 
-     waitForKeyElements(
-            '#changeList',
-            () => {
-                tryToAddDashboardDirectLinks$ && clearInterval(tryToAddDashboardDirectLinks$);
+    waitForKeyElements(
+        '#changeList',
+        () => {
+            tryToAddDashboardDirectLinks$ && clearInterval(tryToAddDashboardDirectLinks$);
 
-                setTimeout(tryToAddDashboardDirectLinks, 4000);
-                tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 600000);
-            }
-        );
+            setTimeout(tryToAddDashboardDirectLinks, 4000);
+            tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 600000);
+        }
+    );
 
     function tryToAddDashboardDirectLinks () {
         const toBeResolveNumber = 6;
@@ -64,12 +64,14 @@
                 const href = linkA.getAttribute('href');
                 const crlink = window.location.origin + href;
 
-                const {verLink, verStatus} = await getCrLinkDetail(crlink);
+                const {verLink, verStatus, _number, _revision_number} = await getCrLinkDetail(crlink);
 
                 if(!verLink){ continue;}
 
                 const linkOfVerPipeline = document.createElement("a");
+                const mariginRight = ['style', 'margin-right:10px'];
                 let icon = 'Ongoing';
+                linkOfVerPipeline.setAttribute(...mariginRight);
                 if(verStatus === 0) {
                     linkOfVerPipeline.setAttribute("class", 'spinner');
                 }
@@ -90,6 +92,11 @@
                 linkOfVerPipeline.setAttribute("href", verLink);
                 linkOfVerPipeline.setAttribute("target", '_blank');
                 statusTd.prepend(linkOfVerPipeline);
+                const retryButton = createRecheckButtonDashboard('RECHECK', () => {
+                    sendRecheckMessage({_number, _revision_number, msg:'RECHECK'});
+                });
+                retryButton.setAttribute(...mariginRight);
+                statusTd.prepend(retryButton);
                 addedLinks.push(linkOfVerPipeline)
             }
 
@@ -120,17 +127,20 @@
 
             const startingMsges = detailData.messages.filter(m => isStartingVerMessage(m.message));
 
+            const _revision_number = detailData.messages.sort((a,b) => {return a._revision_number-b._revision_number})[0]._revision_number;
+
             const latestStartingMsg = startingMsges.pop();
 
             const latest_VER_URL = latestStartingMsg.message.split('Starting VERIFICATION:').pop().trim()
-            
+
             console.log(latest_VER_URL);
 
             const pplVerifiedDetails = detailData.labels.Verified.all.find(item => item.username === 'ca_psscm');
             if(detailData.labels.Verified.approved) pplVerifiedDetails.value = 1;
             if(detailData.labels.Verified.rejected) pplVerifiedDetails.value = -1;
 
-            return {verLink:latest_VER_URL, verStatus: pplVerifiedDetails.value};
+
+            return {verLink:latest_VER_URL, verStatus: pplVerifiedDetails.value, _number: detailData._number, _revision_number};
         }
 
         function normalizeToJsonStr(str) {
@@ -209,12 +219,12 @@
             item.parentElement
                 .appendChild(button)
                 .addEventListener('click',
-                    (event) => {
-                        console.log('clicked');
-                        event.preventDefault();
-                        navigator.clipboard.writeText(event.target.previousElementSibling.attributes.title.value);
-                    }, {}, true
-                );
+                                  (event) => {
+                console.log('clicked');
+                event.preventDefault();
+                navigator.clipboard.writeText(event.target.previousElementSibling.attributes.title.value);
+            }, {}, true
+                                 );
         }
     }
 
@@ -278,10 +288,24 @@
         console.log(`retry button created ${text}`);
     }
 
+    function createRecheckButtonDashboard(text, onclick) {
+        const btn = document.createElement('button');
+        btn.innerHTML = text;
+        btn.style.cssText = 'margin-left: 20px';
+        btn.onclick = onclick;
+        console.log(`retry button created ${text}`);
+        return btn
+    }
+
     function sendRetryMessage(msg) {
-        const crNumber = window.location.href.split('/').pop();
-        const patchSetNumber = document.querySelector('#patchNumDropdown #triggerText').innerText.trim().split(' ').pop();
-        const url = `https://gerrit.ext.net.nokia.com/gerrit/changes/MN%2FMANO%2FOAMCU%2FWEBEM%2Fwebem~${crNumber}/revisions/${patchSetNumber}/review`;
+        const _number = window.location.href.split('/').pop();
+        const _revision_number = document.querySelector('#patchNumDropdown #triggerText').innerText.trim().split(' ').pop();
+
+        return sendRecheckMessage({_number, _revision_number, msg});
+    }
+
+    function sendRecheckMessage({_number, _revision_number, msg}) {
+        const url = `https://gerrit.ext.net.nokia.com/gerrit/changes/MN%2FMANO%2FOAMCU%2FWEBEM%2Fwebem~${_number}/revisions/${_revision_number}/review`;
         const XSRF_TOKEN = document.cookie.split(';').find(p => p.trim().startsWith('XSRF_TOKEN')).split('=')[1];
         fetch(url, {
             "headers": {
@@ -345,7 +369,7 @@
     animation: spinner 1s linear infinite;
 }`
 
-GM_addStyle(css)
+    GM_addStyle(css)
 
 
 })();
