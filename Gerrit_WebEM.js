@@ -19,6 +19,7 @@
     let tryToAddCopyPathButtons$;
     let tryToAddDashboardDirectLinks$;
     let addedLinks = [];
+    let addedRetryButton=[];
     waitForKeyElements(
         '.headerTitle > .headerSubject',
         () => {
@@ -57,6 +58,8 @@
             console.log("cr list rendered");
             addedLinks.forEach(e => {e.remove()});
             addedLinks = [];
+            addedRetryButton.forEach(e => {e.remove()});
+            addedRetryButton = [];
             const d = new Date();
             const updateStr = `${d.getHours()}: ${d.getMinutes()} : ${d.getSeconds()}`
             for await (const item of list ){
@@ -97,6 +100,7 @@
                 });
                 retryButton.setAttribute(...mariginRight);
                 statusTd.prepend(retryButton);
+                addedRetryButton.push(retryButton);
                 addedLinks.push(linkOfVerPipeline)
             }
 
