@@ -127,7 +127,7 @@
 
             const startingMsges = detailData.messages.filter(m => isStartingVerMessage(m.message));
 
-            const _revision_number = detailData.messages.sort((a,b) => {return a._revision_number-b._revision_number})[0]._revision_number;
+            const _revision_number = detailData.messages.sort((a,b) => {return b._revision_number-a._revision_number})[0]._revision_number;
 
             const latestStartingMsg = startingMsges.pop();
 
