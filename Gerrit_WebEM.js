@@ -361,10 +361,14 @@
         const downloadPaths = ['VDU','CU'].map(productType => {
 const url = `https://artifactory-espoo1.int.net.nokia.com/artifactory/list/japco-local/sc-build-artifacts/oam-cci/MN_MANO_OAMCU_WEBEM_webem/master/VERIFICATION/${change}_${patch}/BUILD_${productType}/WEBEM/${productType === "CU"?"rcp":"rcp_oam"}/webem-${productType}.staging.txz`;
             console.log(`download path is `, url)
-            return url;
+            const filename = `${change}_${patch}_${productType}_webem.staging.txz`
+            return {
+            url,filename
+
+            };
         })
-        const getDownloadLinkEle = (url, text) => Object.assign(document.createElement('a'), { href: url, download: text, innerText: text });
-        const btns = downloadPaths.map((url) => { return getDownloadLinkEle (url, url)})
+        const getDownloadLinkEle = (url, filename) => Object.assign(document.createElement('a'), { download:filename, href: url , innerText: filename });
+        const btns = downloadPaths.map(({url,filename}) => { return getDownloadLinkEle (url, filename)})
         return btns;
     }
 
