@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.82
+// @version      0.83
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -188,9 +188,11 @@
             document.querySelector('#commitMessage').parentElement.appendChild(temp);
         });
         // add copy fetch command button
-        document.querySelector('#commitMessage')
+        createButtonToFetchLatestPatchCommit().forEach(createdEle => {
+            document.querySelector('#commitMessage')
             .parentElement
-            .appendChild(createButtonToFetchLatestPatchCommit());
+            .appendChild(createdEle);
+        })
 
         createPipeLineLinks(clickAbleBanners);
         createRetryButtons();
@@ -350,8 +352,20 @@
             navigator.clipboard.writeText(gitCmd + ' && git log FETCH_HEAD -1');
         }, {}, true
                                )
+        const [,change, patch] = eleValue.split('refs/changes/')[1].split("&&")[0].split('/').map(z => z?.trim());
 
-        return button;
+        return [button, ...createButtonsToFetchPackage({change,patch})];
+    }
+
+    function createButtonsToFetchPackage({change,patch}) {
+        const downloadPaths = ['VDU','CU'].map(productType => {
+const url = `https://artifactory-espoo1.int.net.nokia.com/artifactory/list/japco-local/sc-build-artifacts/oam-cci/MN_MANO_OAMCU_WEBEM_webem/master/VERIFICATION/${change}_${patch}/BUILD_${productType}/WEBEM/${productType === "CU"?"rcp":"rcp_oam"}/webem-${productType}.staging.txz`;
+            console.log(`download path is `, url)
+            return url;
+        })
+        const getDownloadLinkEle = (url, text) => Object.assign(document.createElement('a'), { href: url, download: text, innerText: text });
+        const btns = downloadPaths.map((url) => { return getDownloadLinkEle (url, url)})
+        return btns;
     }
 
     const css = `@keyframes spinner {
