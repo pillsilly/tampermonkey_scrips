@@ -13,7 +13,7 @@
 
 (function () {
   ("use strict");
-const mainPath = '//td[contains(text(), "JOB_TYPE=ut_online")]';
+const mainPath = "a.jenkins-table__link";
   waitForKeyElements(mainPath, () => {
     revealDuration();
   });
