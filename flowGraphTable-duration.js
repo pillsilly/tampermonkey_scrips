@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         flowgraph-reveal-duration
 // @namespace    http://tampermonkey.net/
-// @version      2024-03-14
+// @version      0.01
 // @description  try to take over the world!
 // @author       You
 // @match        https://oam-cci.oam.scm.nsn-rdnet.net/job/ZUUL_CHECK__MN.MANO.OAMCU.WEBEM.webem__VERIFICATION/*/flowGraphTable/
