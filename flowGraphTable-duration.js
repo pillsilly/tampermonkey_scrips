@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         jenkins-blue-reveal-duration
+// @name         flowgraph-reveal-duration
 // @namespace    http://tampermonkey.net/
 // @version      2024-03-14
 // @description  try to take over the world!
