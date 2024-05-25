@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.83
+// @version      0.84
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -63,11 +63,11 @@
             const d = new Date();
             const updateStr = `${d.getHours()}: ${d.getMinutes()} : ${d.getSeconds()}`
             for await (const item of list ){
-                const {linkA, statusTd} = item;
+                const {linkA, statusTd, project} = item;
                 const href = linkA.getAttribute('href');
                 const crlink = window.location.origin + href;
 
-                const {verLink, verStatus, _number, _revision_number} = await getCrLinkDetail(crlink);
+                const {verLink, verStatus, _number, _revision_number} = await getCrLinkDetail(crlink,project);
 
                 if(!verLink){ continue;}
 
@@ -95,8 +95,9 @@
                 linkOfVerPipeline.setAttribute("href", verLink);
                 linkOfVerPipeline.setAttribute("target", '_blank');
                 statusTd.prepend(linkOfVerPipeline);
-                const retryButton = createRecheckButtonDashboard('RECHECK', () => {
-                    sendRecheckMessage({_number, _revision_number, msg:'RECHECK'});
+                const retryButton = createRecheckButtonDashboard('RECHECK', (a,b,c) => {
+                    const project = a.target.parentNode.parentNode.querySelector('td.repo a.truncatedRepo').title;
+                    sendRecheckMessage({_number, _revision_number, msg:'RECHECK', project});
                 });
                 retryButton.setAttribute(...mariginRight);
                 statusTd.prepend(retryButton);
@@ -112,7 +113,8 @@
             const visibleLists = [...document.querySelectorAll('gr-change-list-item')].map(function (tr) {
                 const linkA = tr.querySelector('td.subject  a.gr-change-list-item');
                 const statusTd = tr.querySelector('td.status');
-                return { linkA, statusTd}
+                const project = tr.querySelector('td.repo a.truncatedRepo').title;
+                return { linkA, statusTd, tr, project}
             });
 
             const list =  visibleLists.slice(0,visibleLists.length > toBeResolveNumber? toBeResolveNumber :visibleLists.length);
@@ -120,9 +122,11 @@
             return list;
         }
 
-        async function getCrLinkDetail (crlink) {
+        async function getCrLinkDetail (crlink, project) {
 
-            const text = await fetch(getDetailUrl(crlink)).then(body => body.text());
+            const text = await fetch(getDetailUrl(crlink, project)).then(
+              (body) => body.text()
+            );
             const normalizedStr = normalizeToJsonStr(text);
             if(!normalizedStr) {
                 return {verLink:'', verStatus: ''}
@@ -145,27 +149,31 @@
 
 
             return {verLink:latest_VER_URL, verStatus: pplVerifiedDetails.value, _number: detailData._number, _revision_number};
+
+
         }
 
-        function normalizeToJsonStr(str) {
-            let tmpArray = str.split('\n');
-            tmpArray.shift();
 
-            const jsonArray = tmpArray.join('');
-            return jsonArray;
+        function normalizeToJsonStr(str) {
+          let tmpArray = str.split("\n");
+          tmpArray.shift();
+
+          const jsonArray = tmpArray.join("");
+          return jsonArray;
         }
 
         function isStartingVerMessage(msgText) {
-            return msgText.indexOf('Starting VERIFICATION') > 0;
+          return msgText.indexOf("Starting VERIFICATION") > 0;
         }
 
-        function getDetailUrl (crlink) {
-            const origin = window.location.origin;
-            const changeId = crlink.split('/').pop();
+        function getDetailUrl(crlink,project) {
+          const origin = window.location.origin;
+          const changeId = crlink.split("/").pop();
 
-            return `${origin}/gerrit/changes/MN%2FMANO%2FOAMCU%2FWEBEM%2Fwebem~${changeId}/detail`
+          return `${origin}/gerrit/changes/${encodeURIComponent(
+            project
+          )}~${changeId}/detail`;
         }
-
 
 
     }
@@ -190,8 +198,8 @@
         // add copy fetch command button
         createButtonToFetchLatestPatchCommit().forEach(createdEle => {
             document.querySelector('#commitMessage')
-            .parentElement
-            .appendChild(createdEle);
+                .parentElement
+                .appendChild(createdEle);
         })
 
         createPipeLineLinks(clickAbleBanners);
@@ -289,7 +297,10 @@
         const btn = document.createElement('button');
         btn.innerHTML = text;
         btn.style.cssText = 'margin-left: 20px';
-        btn.onclick = () => sendRetryMessage(text);
+        btn.onclick = (ele) => {
+
+            sendRetryMessage(text,project)
+        };
         document.querySelector('gr-messages-list').appendChild(btn);
         console.log(`retry button created ${text}`);
     }
@@ -303,15 +314,15 @@
         return btn
     }
 
-    function sendRetryMessage(msg) {
+    function sendRetryMessage(msg,project) {
         const _number = window.location.href.split('/').pop();
         const _revision_number = document.querySelector('#patchNumDropdown #triggerText').innerText.trim().split(' ').pop();
 
-        return sendRecheckMessage({_number, _revision_number, msg});
+        return sendRecheckMessage({_number, _revision_number, msg,project});
     }
 
-    function sendRecheckMessage({_number, _revision_number, msg}) {
-        const url = `https://gerrit.ext.net.nokia.com/gerrit/changes/MN%2FMANO%2FOAMCU%2FWEBEM%2Fwebem~${_number}/revisions/${_revision_number}/review`;
+    function sendRecheckMessage({_number, _revision_number, msg, project}) {
+        const url = `https://gerrit.ext.net.nokia.com/gerrit/changes/${encodeURIComponent(project)}~${_number}/revisions/${_revision_number}/review`;
         const XSRF_TOKEN = document.cookie.split(';').find(p => p.trim().startsWith('XSRF_TOKEN')).split('=')[1];
         fetch(url, {
             "headers": {
@@ -359,11 +370,11 @@
 
     function createButtonsToFetchPackage({change,patch}) {
         const downloadPaths = ['VDU','CU'].map(productType => {
-const url = `https://artifactory-espoo1.int.net.nokia.com/artifactory/list/japco-local/sc-build-artifacts/oam-cci/MN_MANO_OAMCU_WEBEM_webem/master/VERIFICATION/${change}_${patch}/BUILD_${productType}/WEBEM/${productType === "CU"?"rcp":"rcp_oam"}/webem-${productType}.staging.txz`;
+            const url = `https://artifactory-espoo1.int.net.nokia.com/artifactory/list/japco-local/sc-build-artifacts/oam-cci/MN_MANO_OAMCU_WEBEM_webem/master/VERIFICATION/${change}_${patch}/BUILD_${productType}/WEBEM/${productType === "CU"?"rcp":"rcp_oam"}/webem-${productType}.staging.txz`;
             console.log(`download path is `, url)
             const filename = `${change}_${patch}_${productType}_webem.staging.txz`
             return {
-            url,filename
+                url,filename
 
             };
         })
