@@ -146,9 +146,9 @@
             const pplVerifiedDetails = detailData.labels.Verified.all.find(item => item.username === 'ca_psscm');
             if(detailData.labels.Verified.approved) pplVerifiedDetails.value = 1;
             if(detailData.labels.Verified.rejected) pplVerifiedDetails.value = -1;
+                     
 
-
-            return {verLink:latest_VER_URL, verStatus: pplVerifiedDetails.value, _number: detailData._number, _revision_number};
+            return {verLink:latest_VER_URL, verStatus: pplVerifiedDetails?.value, _number: detailData._number, _revision_number};
 
 
         }
