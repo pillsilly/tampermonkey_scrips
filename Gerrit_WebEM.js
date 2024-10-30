@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.86
+// @version      0.87
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -144,9 +144,8 @@
           console.log(latest_VER_URL);
 
           const pplVerifiedDetails = detailData.labels.Verified.all.find(item => item.username === 'ca_psscm');
-          if(detailData.labels.Verified.approved) pplVerifiedDetails.value = 1;
-          if(detailData.labels.Verified.rejected) pplVerifiedDetails.value = -1;
-
+          if(!!pplVerifiedDetails && detailData.labels.Verified.approved) pplVerifiedDetails.value = 1;
+          if(!!pplVerifiedDetails && detailData.labels.Verified.rejected) pplVerifiedDetails.value = -1;
 
           return {verLink:latest_VER_URL, verStatus: pplVerifiedDetails?.value, _number: detailData._number, _revision_number};
 
