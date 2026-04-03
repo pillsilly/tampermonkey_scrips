@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      0.87
+// @version      1.10
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -14,379 +14,464 @@
   'use strict';
   console.log('Gerrit loaded');
 
-  let lastTargetLength = 0;
+  // ─── Shadow DOM helpers ────────────────────────────────────────────────────
+  // Gerrit 3.9 uses Lit with Declarative Shadow DOM. The gr-* component
+  // internals live in shadow roots; these helpers walk the tree recursively.
+
+  function deepQuery(root, selector) {
+    try {
+      const hit = root.querySelector(selector);
+      if (hit) return hit;
+    } catch (_) {}
+    for (const el of root.querySelectorAll('*')) {
+      if (!el.shadowRoot) continue;
+      const found = deepQuery(el.shadowRoot, selector);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function deepQueryAll(root, selector) {
+    const results = [];
+    try { results.push(...root.querySelectorAll(selector)); } catch (_) {}
+    for (const el of root.querySelectorAll('*')) {
+      if (!el.shadowRoot) continue;
+      results.push(...deepQueryAll(el.shadowRoot, selector));
+    }
+    return results;
+  }
+
+  // ─── URL-based page detection ──────────────────────────────────────────────
+
+  function isDetailPage() {
+    return /\/gerrit\/c\/.+\/\+\/\d+/.test(location.href);
+  }
+
+  function isDashboardPage() {
+    return /\/gerrit\/(q\/|dashboard)/.test(location.href);
+  }
+
+  // ─── Interval handles ─────────────────────────────────────────────────────
+
+  let lastUrl = location.href;
   let tryToAddButtons$;
   let tryToAddCopyPathButtons$;
   let tryToAddDashboardDirectLinks$;
   let addedLinks = [];
-  let addedRetryButton=[];
-  waitForKeyElements(
-      '.headerTitle > .headerSubject',
-      () => {
-          console.log('page changed');
+  let addedRetryButton = [];
 
-          tryToAddButtons$ && clearInterval(tryToAddButtons$);
-          tryToAddCopyPathButtons$ && clearInterval(tryToAddCopyPathButtons$);
+  // Poll URL every 500 ms to catch SPA navigation (pushState / replaceState).
+  setInterval(() => {
+    if (location.href === lastUrl) return;
+    lastUrl = location.href;
+    console.log('Gerrit SPA nav:', location.href);
+    onPageChange();
+  }, 500);
 
-          tryToAddButtons$ = setInterval(tryToAddButtons, 1000);
-          tryToAddCopyPathButtons$ = setInterval(tryToAddCopyPathButtons, 1000);
-      }
-  );
+  function onPageChange() {
+    clearInterval(tryToAddButtons$);
+    clearInterval(tryToAddCopyPathButtons$);
 
-  waitForKeyElements(
-      '#changeList',
-      () => {
-          tryToAddDashboardDirectLinks$ && clearInterval(tryToAddDashboardDirectLinks$);
+    if (isDetailPage()) {
+      tryToAddButtons$ = setInterval(tryToAddButtons, 1000);
+      tryToAddCopyPathButtons$ = setInterval(tryToAddCopyPathButtons, 1000);
+    }
 
-          setTimeout(tryToAddDashboardDirectLinks, 4000);
-          tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 600000);
-      }
-  );
-
-  function tryToAddDashboardDirectLinks () {
-      const toBeResolveNumber = 6;
-      console.log('tryToAddDashboardDirectLinks in');
-      execute();
-      async function execute() {
-
-          const list = findList ();
-          if(!list?.length) {
-              console.log("no cr list found yet")
-              return;
-          }
-
-          console.log("cr list rendered");
-          addedLinks.forEach(e => {e.remove()});
-          addedLinks = [];
-          addedRetryButton.forEach(e => {e.remove()});
-          addedRetryButton = [];
-          const d = new Date();
-          const updateStr = `${d.getHours()}: ${d.getMinutes()} : ${d.getSeconds()}`
-          for await (const item of list ){
-              const {linkA, statusTd, project} = item;
-              const href = linkA.getAttribute('href');
-              const crlink = window.location.origin + href;
-
-              const {verLink, verStatus, _number, _revision_number} = await getCrLinkDetail(crlink,project);
-
-              if(!verLink){ continue;}
-
-              const linkOfVerPipeline = document.createElement("a");
-              const mariginRight = ['style', 'margin-right:10px'];
-              let icon = 'Ongoing';
-              linkOfVerPipeline.setAttribute(...mariginRight);
-              if(verStatus === 0) {
-                  linkOfVerPipeline.setAttribute("class", 'spinner');
-              }
-
-              if(verStatus === 1) {
-                  icon = '✔'
-                  linkOfVerPipeline.setAttribute("class", 'u-green');
-              }
-
-              if(verStatus <= -1) {
-                  icon = '❌'
-                  linkOfVerPipeline.setAttribute("class", 'u-red');
-              }
-
-              linkOfVerPipeline.innerHTML = `${icon}(${updateStr})`;
-
-
-              linkOfVerPipeline.setAttribute("href", verLink);
-              linkOfVerPipeline.setAttribute("target", '_blank');
-              statusTd.prepend(linkOfVerPipeline);
-              const retryButton = createRecheckButtonDashboard('RECHECK', (a,b,c) => {
-                  const project = a.target.parentNode.parentNode.querySelector('td.repo a.truncatedRepo').title;
-                  sendRecheckMessage({_number, _revision_number, msg:'RECHECK', project});
-              });
-              retryButton.setAttribute(...mariginRight);
-              statusTd.prepend(retryButton);
-              addedRetryButton.push(retryButton);
-              addedLinks.push(linkOfVerPipeline)
-          }
-
-          console.log(list.length + "item proceeded");
-
-      }
-
-      function findList () {
-          const visibleLists = [...document.querySelectorAll('gr-change-list-item')].map(function (tr) {
-              const linkA = tr.querySelector('td.subject  a.gr-change-list-item');
-              const statusTd = tr.querySelector('td.status');
-              const project = tr.querySelector('td.repo a.truncatedRepo').title;
-              return { linkA, statusTd, tr, project}
-          });
-
-          const list =  visibleLists.slice(0,visibleLists.length > toBeResolveNumber? toBeResolveNumber :visibleLists.length);
-          console.log(`list length: ${list.length}`);
-          return list;
-      }
-
-      async function getCrLinkDetail (crlink, project) {
-
-          const text = await fetch(getDetailUrl(crlink, project)).then(
-            (body) => body.text()
-          );
-          const normalizedStr = normalizeToJsonStr(text);
-          if(!normalizedStr) {
-              return {verLink:'', verStatus: ''}
-          }
-          const detailData = JSON.parse(normalizedStr);
-
-          const startingMsges = detailData.messages.filter(m => isStartingVerMessage(m.message));
-
-          const _revision_number = detailData.messages.sort((a,b) => {return b._revision_number-a._revision_number})[0]._revision_number;
-
-          const latestStartingMsg = startingMsges.pop();
-
-          const latest_VER_URL = latestStartingMsg.message.split('Starting VERIFICATION:').pop().trim()
-
-          console.log(latest_VER_URL);
-
-          const pplVerifiedDetails = detailData.labels.Verified.all.find(item => item.username === 'ca_psscm');
-          if(!!pplVerifiedDetails && detailData.labels.Verified.approved) pplVerifiedDetails.value = 1;
-          if(!!pplVerifiedDetails && detailData.labels.Verified.rejected) pplVerifiedDetails.value = -1;
-
-          return {verLink:latest_VER_URL, verStatus: pplVerifiedDetails?.value, _number: detailData._number, _revision_number};
-
-
-      }
-
-
-      function normalizeToJsonStr(str) {
-        let tmpArray = str.split("\n");
-        tmpArray.shift();
-
-        const jsonArray = tmpArray.join("");
-        return jsonArray;
-      }
-
-      function isStartingVerMessage(msgText) {
-        return msgText.indexOf("Starting VERIFICATION") > 0;
-      }
-
-      function getDetailUrl(crlink,project) {
-        const origin = window.location.origin;
-        const changeId = crlink.split("/").pop();
-
-        return `${origin}/gerrit/changes/${encodeURIComponent(
-          project
-        )}~${changeId}/detail`;
-      }
-
-
+    if (isDashboardPage()) {
+      clearInterval(tryToAddDashboardDirectLinks$);
+      setTimeout(tryToAddDashboardDirectLinks, 4000);
+      tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 600000);
+    }
   }
+
+  // Also fire on initial page load via waitForKeyElements.
+  waitForKeyElements('gr-change-list-item', () => {
+    if (!isDashboardPage()) return;
+    clearInterval(tryToAddDashboardDirectLinks$);
+    setTimeout(tryToAddDashboardDirectLinks, 4000);
+    tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 600000);
+  });
+
+  waitForKeyElements('gr-change-view', () => {
+    if (!isDetailPage()) return;
+    clearInterval(tryToAddButtons$);
+    clearInterval(tryToAddCopyPathButtons$);
+    tryToAddButtons$ = setInterval(tryToAddButtons, 1000);
+    tryToAddCopyPathButtons$ = setInterval(tryToAddCopyPathButtons, 1000);
+  });
+
+  setTimeout(onPageChange, 1000);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DASHBOARD PAGE  – verification pipeline links + RECHECK buttons
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function tryToAddDashboardDirectLinks() {
+    const MAX_ITEMS = 6;
+    console.log('tryToAddDashboardDirectLinks');
+
+    async function execute() {
+      const list = findChangeListItems();
+      if (!list.length) { console.log('no cr list rendered yet'); return; }
+
+      console.log(`${list.length} cr items found`);
+      addedLinks.forEach(e => e.remove());       addedLinks = [];
+      addedRetryButton.forEach(e => e.remove()); addedRetryButton = [];
+
+      const d = new Date();
+      const ts = `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`;
+
+      for (const { linkA, statusTd, project } of list) {
+        const href = linkA.getAttribute('href').replace(/\?.*$/, '');
+        const crlink = window.location.origin + href;
+
+        const detail = await getCrLinkDetail(crlink, project);
+        if (!detail.verLink) continue;
+
+        // ── pipeline status link ──
+        const a = document.createElement('a');
+        a.style.marginRight = '10px';
+        let icon = 'Ongoing';
+        if (detail.verStatus === 0)  { a.className = 'spinner'; }
+        if (detail.verStatus === 1)  { icon = '✔'; a.className = 'u-green'; }
+        if (detail.verStatus <= -1)  { icon = '❌'; a.className = 'u-red'; }
+        a.innerHTML = `${icon}(${ts})`;
+        a.href = detail.verLink;
+        a.target = '_blank';
+        statusTd.prepend(a);
+        addedLinks.push(a);
+
+        // ── RECHECK button ──
+        const btn = document.createElement('button');
+        btn.textContent = 'RECHECK';
+        btn.style.marginRight = '10px';
+        btn.onclick = () => sendRecheckMessage({
+          _number: detail._number,
+          _revision_number: detail._revision_number,
+          msg: 'RECHECK',
+          project,
+        });
+        statusTd.prepend(btn);
+        addedRetryButton.push(btn);
+      }
+
+      console.log(`${list.length} items processed`);
+    }
+
+    execute();
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    function findChangeListItems() {
+      // Gerrit 3.9: gr-change-list-item is in the regular DOM;
+      // its cells (td.cell.*) are inside its declarative shadow root.
+      return [...document.querySelectorAll('gr-change-list-item')]
+        .map(item => {
+          const sr = item.shadowRoot || item;
+          const linkA   = sr.querySelector('td.cell.subject a') || sr.querySelector('td.subject a');
+          const statusTd = sr.querySelector('td.cell.status')   || sr.querySelector('td.status');
+          const repoEl  = sr.querySelector('td.cell.repo a.truncatedRepo') ||
+                          sr.querySelector('td.cell.repo a.fullRepo') ||
+                          sr.querySelector('td.repo a.truncatedRepo');
+          const project = repoEl?.title?.trim() || repoEl?.textContent?.trim();
+          return { linkA, statusTd, project };
+        })
+        .filter(x => x.linkA && x.statusTd && x.project)
+        .slice(0, MAX_ITEMS);
+    }
+
+    async function getCrLinkDetail(crlink, project) {
+      const changeId = crlink.split('/').pop();
+      const url = `${location.origin}/gerrit/changes/${encodeURIComponent(project)}~${changeId}/detail`;
+      let text;
+      try { text = await fetch(url).then(r => r.text()); } catch (_) { return {}; }
+
+      // Gerrit REST API prepends ")]}'\\n" – strip it.
+      const json = text.split('\n').slice(1).join('');
+      if (!json) return {};
+
+      let data;
+      try { data = JSON.parse(json); } catch (_) { return {}; }
+
+      const startMsgs = (data.messages || []).filter(m => m.message.includes('Starting VERIFICATION:'));
+      if (!startMsgs.length) return {};
+
+      const _revision_number = [...(data.messages || [])]
+        .sort((a, b) => b._revision_number - a._revision_number)[0]._revision_number;
+
+      const verLink = startMsgs[startMsgs.length - 1].message
+        .split('Starting VERIFICATION:').pop().trim();
+
+      const pplVerified = data.labels?.Verified?.all?.find(x => x.username === 'ca_psscm');
+      let verStatus = pplVerified?.value ?? 0;
+      if (pplVerified && data.labels.Verified.approved)  verStatus = 1;
+      if (pplVerified && data.labels.Verified.rejected)  verStatus = -1;
+
+      return { verLink, verStatus, _number: data._number, _revision_number };
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DETAIL PAGE  – pipeline links, RECHECK buttons, fetch/download helpers
+  // ═══════════════════════════════════════════════════════════════════════════
 
   function tryToAddButtons() {
-      console.log('tryToAddButtons');
-      const clickAbleBanners = document.querySelectorAll('div.collapsed.hideAvatar');
-      const relatedChanges = document.querySelector('section.relatedChanges');
+    console.log('tryToAddButtons');
 
-      lastTargetLength = clickAbleBanners.length;
-      function isRenderingBanners() {
-          return !relatedChanges || !clickAbleBanners || !clickAbleBanners.length || (clickAbleBanners.length !== lastTargetLength);
-      }
-      if (isRenderingBanners()) return;
+    // Wait for gr-messages-list (lives inside gr-change-view shadow root)
+    // and for gr-download-dialog (also inside gr-change-view shadow root).
+    const changeView = document.querySelector('gr-change-view');
+    if (!changeView?.shadowRoot) return;
+    const cvSr = changeView.shadowRoot;
 
+    const messagesList = cvSr.querySelector('gr-messages-list');
+    if (!messagesList) return;
 
-      [...document.querySelectorAll('#downloadCommands .commandContainer input')].map(x => {
-          const temp = document.createElement('div');
-          temp.innerHTML = x.value;
-          document.querySelector('#commitMessage').parentElement.appendChild(temp);
-      });
-      // add copy fetch command button
-      createButtonToFetchLatestPatchCommit().forEach(createdEle => {
-          document.querySelector('#commitMessage')
-              .parentElement
-              .appendChild(createdEle);
-      })
+    const messages = deepQueryAll(messagesList, 'gr-message');
+    if (!messages.length) return;
 
-      createPipeLineLinks(clickAbleBanners);
-      createRetryButtons();
-      clearInterval(tryToAddButtons$);
+    // gr-download-dialog is only shown when the download panel is open,
+    // but the element itself is always in the DOM (#downloadDialog).
+    const downloadDialog = cvSr.querySelector('#downloadDialog, gr-download-dialog');
+    if (!downloadDialog) return;
+
+    createPipeLineLinks(messages);
+    createRetryButtons(changeView);
+    createFetchButtons(downloadDialog, cvSr);
+    clearInterval(tryToAddButtons$);
   }
+
+  // ── File-copy buttons ──────────────────────────────────────────────────────
 
   function tryToAddCopyPathButtons() {
-      console.log('tryToAddCopyPathButtons');
-      const copyFilePathBtns = document.querySelectorAll('button[name="copyFilePath"]');
-      const fileRow = document.querySelectorAll('.file-row');
+    console.log('tryToAddCopyPathButtons');
+    if (deepQuery(document, 'button[name="copyFilePath"]')) {
+      clearInterval(tryToAddCopyPathButtons$);
+      return;
+    }
+    const fileListEl = deepQuery(document, 'gr-file-list');
+    if (!fileListEl) return;
 
-      if (!copyFilePathBtns?.length && fileRow && fileRow.length) {
-          createCopyPathButtons();
-          clearInterval(tryToAddCopyPathButtons$);
-      }
-
+    createCopyPathButtons(fileListEl);
+    clearInterval(tryToAddCopyPathButtons$);
   }
 
-  function createCopyPathButtons() {
-      document.querySelectorAll('.fullFileName')
-          .forEach(createPathButton);
-
-      function createPathButton(item, index) {
-          if (index === 0) return;
-
-          const button = document.createElement('button');
-          button.innerHTML = "Copy File Path";
-          button.setAttribute('name', 'copyFilePath');
-
-          item.parentElement
-              .appendChild(button)
-              .addEventListener('click',
-                                (event) => {
-              console.log('clicked');
-              event.preventDefault();
-              navigator.clipboard.writeText(event.target.previousElementSibling.attributes.title.value);
-          }, {}, true
-                               );
-      }
-  }
-
-  function createPipeLineLinks(clickAbleBanners) {
-      clickAbleBanners
-          .forEach((target) => target.addEventListener("click", createPipeLineLink(target)));
-
-      console.log(`PipeLineLinks created`);
-  }
-
-  function createPipeLineLink(session) {
-      return () => {
-          console.log(`clicked `, session);
-          const infoArea = session.querySelector('#container > p:nth-child(2)');
-          const replyContainerExist = !!session.querySelector('div.replyContainer>a');
-          if (replyContainerExist) return;
-          if (!infoArea) return;
-
-          let infoAreaText = infoArea.innerText;
-          let start = infoAreaText.indexOf('https://');
-          infoAreaText = infoAreaText.slice(start, infoAreaText.length - 1);
-          console.log(`text is ${infoAreaText}`);
-          infoAreaText = infoAreaText.replace(/\r?\n?\s/g, '[break]');
-          console.log(`text is ${infoAreaText}`);
-          let end = infoAreaText.indexOf('[break]');
-
-
-          if (!(start >= 0 && end > 10)) {
-              console.log('not a place to add pipe line link');
-              return;
-          }
-
-          let link;
-          link = infoAreaText.slice(start, end);
-          const project = link.match(/(jenkins\/(.*)\/detail)/).pop();
-          console.log(`project is ${project}`);
-          const pipeLineId = link.split('/').pop();
-          const pipeLineLinkLog = ` https://oam-cci.oam.scm.nsn-rdnet.net/blue/rest/organizations/jenkins/pipelines/${project}/runs/${pipeLineId}/log/?`;
-          console.log(`log line link is ${pipeLineLinkLog}`);
-          const replyContainer = session.querySelector('div.replyContainer');
-          let aTag = document.createElement("a");
-          aTag.setAttribute("href", pipeLineLinkLog);
-          aTag.setAttribute("target", '_blank');
-          aTag.innerHTML = 'pipeline log';
-          replyContainer.appendChild(aTag);
-          console.log(`append is done`, replyContainer);
-      };
-  }
-
-  function createRetryButtons() {
-      ['RECHECK_ALL', 'RECHECK_PIT', 'RECHECK']
-          .forEach(createButton);
-  }
-
-  function createButton(text) {
-      const project = new URL(window.location.href).pathname.split('+')[0].split('\/c\/')[1].slice(0, -1);
-      const btn = document.createElement('button');
-      btn.innerHTML = text;
-      btn.style.cssText = 'margin-left: 20px';
-      btn.onclick = (ele) => {
-
-          sendRetryMessage(text,project)
-      };
-      document.querySelector('gr-messages-list').appendChild(btn);
-      console.log(`retry button created ${text}`);
-  }
-
-  function createRecheckButtonDashboard(text, onclick) {
-      const btn = document.createElement('button');
-      btn.innerHTML = text;
-      btn.style.cssText = 'margin-left: 20px';
-      btn.onclick = onclick;
-      console.log(`retry button created ${text}`);
-      return btn
-  }
-
-  function sendRetryMessage(msg,project) {
-      const _number =window.location.href.split('+/')[1].trim().split('/')[0]
-      const _revision_number = document.querySelector('#patchNumDropdown #triggerText').innerText.trim().split(' ').pop();
-
-      return sendRecheckMessage({_number, _revision_number, msg,project});
-  }
-
-  function sendRecheckMessage({_number, _revision_number, msg, project}) {
-      const url = `https://gerrit.ext.net.nokia.com/gerrit/changes/${encodeURIComponent(project)}~${_number}/revisions/${_revision_number}/review`;
-      const XSRF_TOKEN = document.cookie.split(';').find(p => p.trim().startsWith('XSRF_TOKEN')).split('=')[1];
-      fetch(url, {
-          "headers": {
-              "accept": "*/*",
-              "accept-language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7",
-              "content-type": "application/json",
-              "sec-fetch-dest": "empty",
-              "sec-fetch-mode": "cors",
-              "sec-fetch-site": "same-origin",
-              "x-gerrit-auth": XSRF_TOKEN
-          },
-          "body": `{\"drafts\":\"PUBLISH_ALL_REVISIONS\",\"labels\":{},\"message\":\"${msg}\",\"reviewers\":[]}`,
-          "method": "POST",
-          "mode": "cors",
-          "credentials": "include"
-      }).then((resp) => {
-          if (!resp.ok) {
-              console.log(`Failed send ${msg}`, resp);
-              return;
-          }
-          const shouldReload = confirm(`Successfully send ${msg}, reload page now?`);
-          if (shouldReload) {
-              window.location.reload();
-          }
+  function createCopyPathButtons(fileListEl) {
+    // gr-file-list renders file rows; each row has an <a> with the file path.
+    // In Gerrit 3.9 the file links are inside gr-file-list-item shadow roots.
+    const fileItems = deepQueryAll(fileListEl, 'gr-file-list-item, .file-row');
+    if (fileItems.length) {
+      fileItems.forEach((row, idx) => {
+        if (idx === 0) return; // skip the "Commit message" pseudo-row
+        const pathEl = deepQuery(row, 'a[href*="diff"], .path, .fullFileName');
+        if (!pathEl) return;
+        const getPath = () =>
+          pathEl.getAttribute('title') ||
+          pathEl.dataset.value ||
+          pathEl.textContent.trim();
+        addCopyButton(pathEl.closest('td, div') || pathEl, getPath);
       });
+      return;
+    }
+    // Fallback: find all diff links in the file list shadow
+    const sr = fileListEl.shadowRoot || fileListEl;
+    const links = sr.querySelectorAll('a[href*="diff"]');
+    [...links].forEach((link, idx) => {
+      if (idx === 0) return;
+      addCopyButton(link.parentElement || link,
+        () => link.pathname?.split('/').pop() || link.textContent.trim());
+    });
   }
 
-  function createButtonToFetchLatestPatchCommit() {
-      const ele = document.querySelector('#downloadCommands .commandContainer input')
-      const eleValue = ele.value ; //git fetch "ssh://frawu@gerrit.ext.net.nokia.com:29418/MN/MANO/OAMCU/WEBEM/webem" refs/changes/41/5016741/3
-      const gitCmd = eleValue.split('&&')[0];
-      const button = document.createElement('button');
-      button.innerHTML = "Copy Command Fetch newest commit";
-      button.addEventListener('click',
-                              (event) => {
-          console.log('clicked');
-          event.preventDefault();
-          navigator.clipboard.writeText(gitCmd + ' && git log FETCH_HEAD -1');
-      }, {}, true
-                             )
-      const [,change, patch] = eleValue.split('refs/changes/')[1].split("&&")[0].split('/').map(z => z?.trim());
-
-      return [button, ...createButtonsToFetchPackage({change,patch})];
+  function addCopyButton(container, getPath) {
+    if (container.querySelector('button[name="copyFilePath"]')) return;
+    const btn = document.createElement('button');
+    btn.textContent = 'Copy File Path';
+    btn.setAttribute('name', 'copyFilePath');
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      navigator.clipboard.writeText(getPath());
+    }, true);
+    container.appendChild(btn);
   }
 
-  function createButtonsToFetchPackage({change,patch}) {
-      const downloadPaths = ['VDU','CU'].map(productType => {
-          const url = `https://artifactory-espoo1.int.net.nokia.com/artifactory/list/japco-local/sc-build-artifacts/oam-cci/MN_MANO_OAMCU_WEBEM_webem/master/VERIFICATION/${change}_${patch}/BUILD_${productType}/WEBEM/${productType === "CU"?"rcp":"rcp_oam"}/webem-${productType}.staging.txz`;
-          console.log(`download path is `, url)
-          const filename = `${change}_${patch}_${productType}_webem.staging.txz`
-          return {
-              url,filename
+  // ── Pipeline links inside message banners ──────────────────────────────────
+  // gr-message shadow root structure (Gerrit 3.9):
+  //   div.collapsed | div.expanded
+  //     div.contentContainer
+  //       div.content.messageContent
+  //         div.message         ← collapsed preview text
+  //         div.message.hideOnCollapsed  ← expanded full text
 
-          };
-      })
-      const getDownloadLinkEle = (url, filename) => Object.assign(document.createElement('a'), { download:filename, href: url , innerText: filename });
-      const btns = downloadPaths.map(({url,filename}) => { return getDownloadLinkEle (url, filename)})
-      return btns;
+  function createPipeLineLinks(messages) {
+    messages.forEach(msg => {
+      const sr = msg.shadowRoot || msg;
+      // Already has our link?
+      if (sr.querySelector('a[data-pipeline-link]')) return;
+
+      // Find the text container that holds the VERIFICATION URL
+      const textEl = sr.querySelector('.contentContainer .message') ||
+                     sr.querySelector('.contentContainer') ||
+                     sr.querySelector('div');
+      if (!textEl) return;
+
+      const text = textEl.innerText || textEl.textContent || '';
+      const httpsIdx = text.indexOf('https://');
+      if (httpsIdx < 0) return;
+
+      // Grab the URL (stop at first whitespace/newline)
+      const urlPart = text.slice(httpsIdx).replace(/\s[\s\S]*/, '');
+      const pipelineMatch = urlPart.match(/jenkins\/(.+?)\/detail/);
+      if (!pipelineMatch) return;
+
+      const project = pipelineMatch[1];
+      const runId = urlPart.split('/').pop();
+      const logUrl = `https://oam-cci.oam.scm.nsn-rdnet.net/blue/rest/organizations/jenkins/pipelines/${project}/runs/${runId}/log/?`;
+
+      const a = document.createElement('a');
+      a.href = logUrl;
+      a.target = '_blank';
+      a.textContent = 'pipeline log';
+      a.dataset.pipelineLink = '1';
+      a.style.marginLeft = '8px';
+
+      // Append after the text block, inside the contentContainer
+      const container = sr.querySelector('.contentContainer') || sr;
+      container.appendChild(a);
+      console.log('pipeline link appended');
+    });
   }
 
-  const css = `@keyframes spinner {
-to {transform: rotate(360deg);}
-}
+  // ── RECHECK / RECHECK_ALL / RECHECK_PIT buttons ───────────────────────────
 
+  function createRetryButtons(changeView) {
+    const project = getProjectFromUrl();
+    if (!project) return;
+
+    // gr-messages-list is in changeView shadow root – append buttons there
+    // so they appear at the bottom of the messages panel.
+    const msgList = changeView.shadowRoot.querySelector('gr-messages-list');
+    if (!msgList) return;
+
+    ['RECHECK_ALL', 'RECHECK_PIT', 'RECHECK'].forEach(text => {
+      if (msgList.querySelector(`button[data-recheck="${text}"]`)) return;
+      const btn = document.createElement('button');
+      btn.textContent = text;
+      btn.style.marginLeft = '20px';
+      btn.dataset.recheck = text;
+      btn.onclick = () => sendRetryMessage(text, project);
+      msgList.appendChild(btn);
+      console.log(`retry button created: ${text}`);
+    });
+  }
+
+  function sendRetryMessage(msg, project) {
+    const _number = location.href.split('+/')[1]?.split('/')[0];
+    if (!_number) return;
+    const _revision_number = getPatchNum();
+    sendRecheckMessage({ _number, _revision_number, msg, project });
+  }
+
+  function getPatchNum() {
+    // Try to read from gr-change-view JS property (most reliable).
+    const cv = document.querySelector('gr-change-view');
+    if (cv?.patchNum !== undefined) return String(cv.patchNum);
+
+    // URL: /gerrit/c/<project>/+/<changeNum>/<patchNum>
+    const after = location.pathname.split('+/')[1];
+    if (after) {
+      const parts = after.split('/').filter(Boolean);
+      if (parts.length >= 2) return parts[1];
+    }
+    return '1';
+  }
+
+  function getProjectFromUrl() {
+    // URL pattern: /gerrit/c/<project>/+/<number>
+    const m = location.pathname.match(/\/gerrit\/c\/(.+)\/\+\/\d+/);
+    return m ? m[1] : null;
+  }
+
+  function sendRecheckMessage({ _number, _revision_number, msg, project }) {
+    const url = `${location.origin}/gerrit/changes/${encodeURIComponent(project)}~${_number}/revisions/${_revision_number}/review`;
+    const xsrfCookie = document.cookie.split(';').find(p => p.trim().startsWith('XSRF_TOKEN'));
+    const XSRF_TOKEN = xsrfCookie?.split('=')[1];
+    fetch(url, {
+      method: 'POST',
+      mode: 'cors',
+      credentials: 'include',
+      headers: {
+        'accept': '*/*',
+        'content-type': 'application/json',
+        'x-gerrit-auth': XSRF_TOKEN,
+      },
+      body: JSON.stringify({ drafts: 'PUBLISH_ALL_REVISIONS', labels: {}, message: msg, reviewers: [] }),
+    }).then(resp => {
+      if (!resp.ok) { console.error(`Failed to send ${msg}`, resp); return; }
+      if (confirm(`Successfully sent "${msg}". Reload page?`)) location.reload();
+    });
+  }
+
+  // ── "Copy fetch command" + artifact download links ─────────────────────────
+  // Gerrit 3.9 structure (all inside shadow roots):
+  //   gr-change-view#shadow  →  #downloadDialog (gr-download-dialog)
+  //     gr-download-dialog#shadow  →  #downloadCommands (gr-download-commands)
+  //       gr-download-commands#shadow  →  gr-shell-command.checkout (or any)
+  //         gr-shell-command#shadow  →  gr-copy-clipboard
+  //           gr-copy-clipboard#shadow  →  iron-input  →  input#input  (.value = git cmd)
+
+  function createFetchButtons(downloadDialog, cvSr) {
+    if (cvSr.querySelector('button[data-fetch-btn]')) return;
+
+    // Find any input whose value looks like a git fetch command
+    const fetchInput = deepQuery(downloadDialog, 'input#input') ||
+                       deepQuery(downloadDialog, 'input[value*="git fetch"]');
+    if (!fetchInput) return;
+
+    const cmd = fetchInput.value;
+    if (!cmd.includes('refs/changes/')) return;
+
+    const fetchPart = cmd.split('&&')[0].trim();
+
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = 'Copy: git fetch + log';
+    copyBtn.dataset.fetchBtn = '1';
+    copyBtn.style.cssText = 'margin:4px 4px 4px 0';
+    copyBtn.addEventListener('click', e => {
+      e.preventDefault();
+      navigator.clipboard.writeText(fetchPart + ' && git log FETCH_HEAD -1');
+    }, true);
+
+    // Parse change/patch numbers from the refs/changes/<xx>/<change>/<patch> path
+    const refsMatch = cmd.match(/refs\/changes\/\d+\/(\d+)\/(\d+)/);
+    if (!refsMatch) return;
+    const [, change, patch] = refsMatch;
+
+    const downloadLinks = createArtifactLinks(change, patch);
+
+    // Attach near the commit message area (inside gr-change-view shadow root)
+    const commitMsg = cvSr.querySelector('#commitMessage, .commitMessage');
+    const anchor = commitMsg?.parentElement || cvSr;
+    anchor.appendChild(copyBtn);
+    downloadLinks.forEach(l => anchor.appendChild(l));
+  }
+
+  function createArtifactLinks(change, patch) {
+    return ['VDU', 'CU'].map(type => {
+      const subDir = type === 'CU' ? 'rcp' : 'rcp_oam';
+      const url = `https://artifactory-espoo1.int.net.nokia.com/artifactory/list/japco-local/sc-build-artifacts/oam-cci/MN_MANO_OAMCU_WEBEM_webem/master/VERIFICATION/${change}_${patch}/BUILD_${type}/WEBEM/${subDir}/webem-${type}.staging.txz`;
+      const filename = `${change}_${patch}_${type}_webem.staging.txz`;
+      const a = document.createElement('a');
+      Object.assign(a, { download: filename, href: url, innerText: filename });
+      a.style.cssText = 'margin:4px 8px 4px 0; display:inline-block';
+      return a;
+    });
+  }
+
+  // ─── CSS ───────────────────────────────────────────────────────────────────
+
+  GM_addStyle(`
+@keyframes spinner { to { transform: rotate(360deg); } }
 .spinner:before {
   vertical-align: text-bottom;
   content: '';
@@ -400,10 +485,7 @@ to {transform: rotate(360deg);}
   border: 2px solid #ccc;
   border-top-color: #000;
   animation: spinner 1s linear infinite;
-}`
-
-  GM_addStyle(css)
-
+}
+`);
 
 })();
-
