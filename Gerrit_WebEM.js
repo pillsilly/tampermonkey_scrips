@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gerrit
 // @namespace    http://tampermonkey.net/
-// @version      1.10
+// @version      1.11
 // @author       Frank Wu
 // @include  https://gerrit.ext.net.nokia.com/*
 // @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
@@ -12,7 +12,7 @@
 
 (function () {
   'use strict';
-  console.log('Gerrit loaded');
+  console.log('%c[Gerrit TM] Script loaded v1.10', 'color:green;font-weight:bold;font-size:14px');
 
   // ─── Shadow DOM helpers ────────────────────────────────────────────────────
   // Gerrit 3.9 uses Lit with Declarative Shadow DOM. The gr-* component
@@ -54,13 +54,14 @@
   // ─── Interval handles ─────────────────────────────────────────────────────
 
   let lastUrl = location.href;
-  let tryToAddButtons$;
-  let tryToAddCopyPathButtons$;
-  let tryToAddDashboardDirectLinks$;
+  let tryToAddButtons$ = null;
+  let tryToAddCopyPathButtons$ = null;
+  let tryToAddDashboardDirectLinks$ = null;
+  let dashboardScheduled = false;
   let addedLinks = [];
   let addedRetryButton = [];
 
-  // Poll URL every 500 ms to catch SPA navigation (pushState / replaceState).
+  // ── URL polling: detects SPA navigation (pushState / replaceState) ──────────
   setInterval(() => {
     if (location.href === lastUrl) return;
     lastUrl = location.href;
@@ -68,39 +69,54 @@
     onPageChange();
   }, 500);
 
-  function onPageChange() {
-    clearInterval(tryToAddButtons$);
-    clearInterval(tryToAddCopyPathButtons$);
-
-    if (isDetailPage()) {
-      tryToAddButtons$ = setInterval(tryToAddButtons, 1000);
-      tryToAddCopyPathButtons$ = setInterval(tryToAddCopyPathButtons, 1000);
-    }
-
-    if (isDashboardPage()) {
-      clearInterval(tryToAddDashboardDirectLinks$);
-      setTimeout(tryToAddDashboardDirectLinks, 4000);
-      tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 600000);
-    }
+  function resetDetailIntervals() {
+    clearInterval(tryToAddButtons$);      tryToAddButtons$ = null;
+    clearInterval(tryToAddCopyPathButtons$); tryToAddCopyPathButtons$ = null;
   }
 
-  // Also fire on initial page load via waitForKeyElements.
-  waitForKeyElements('gr-change-list-item', () => {
-    if (!isDashboardPage()) return;
-    clearInterval(tryToAddDashboardDirectLinks$);
-    setTimeout(tryToAddDashboardDirectLinks, 4000);
-    tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 600000);
-  });
+  function resetDashboardIntervals() {
+    clearInterval(tryToAddDashboardDirectLinks$); tryToAddDashboardDirectLinks$ = null;
+    dashboardScheduled = false;
+  }
 
-  waitForKeyElements('gr-change-view', () => {
-    if (!isDetailPage()) return;
-    clearInterval(tryToAddButtons$);
-    clearInterval(tryToAddCopyPathButtons$);
+  function startDetailPolling() {
+    if (tryToAddButtons$) return;
+    console.log('Gerrit: starting detail page polling');
     tryToAddButtons$ = setInterval(tryToAddButtons, 1000);
     tryToAddCopyPathButtons$ = setInterval(tryToAddCopyPathButtons, 1000);
-  });
+  }
 
-  setTimeout(onPageChange, 1000);
+  function startDashboardPolling() {
+    if (dashboardScheduled) return;
+    dashboardScheduled = true;
+    console.log('Gerrit: scheduling dashboard polling');
+    setTimeout(tryToAddDashboardDirectLinks, 2000);
+    tryToAddDashboardDirectLinks$ = setInterval(tryToAddDashboardDirectLinks, 600000);
+  }
+
+  function onPageChange() {
+    resetDetailIntervals();
+    resetDashboardIntervals();
+
+    if (isDetailPage())   startDetailPolling();
+    if (isDashboardPage()) startDashboardPolling();
+  }
+
+  // ── MutationObserver: catches element appearing in DOM after initial render ──
+  const _observer = new MutationObserver(() => {
+    if (isDashboardPage() && !dashboardScheduled && document.querySelector('gr-change-list-item')) {
+      console.log('observer: gr-change-list-item appeared');
+      startDashboardPolling();
+    }
+    if (isDetailPage() && !tryToAddButtons$ && document.querySelector('gr-change-view')) {
+      console.log('observer: gr-change-view appeared');
+      startDetailPolling();
+    }
+  });
+  _observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  // Fire once for the page already loaded when the script starts
+  setTimeout(onPageChange, 500);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DASHBOARD PAGE  – verification pipeline links + RECHECK buttons
@@ -165,19 +181,26 @@
     function findChangeListItems() {
       // Gerrit 3.9: gr-change-list-item is in the regular DOM;
       // its cells (td.cell.*) are inside its declarative shadow root.
-      return [...document.querySelectorAll('gr-change-list-item')]
-        .map(item => {
-          const sr = item.shadowRoot || item;
-          const linkA   = sr.querySelector('td.cell.subject a') || sr.querySelector('td.subject a');
-          const statusTd = sr.querySelector('td.cell.status')   || sr.querySelector('td.status');
-          const repoEl  = sr.querySelector('td.cell.repo a.truncatedRepo') ||
-                          sr.querySelector('td.cell.repo a.fullRepo') ||
-                          sr.querySelector('td.repo a.truncatedRepo');
-          const project = repoEl?.title?.trim() || repoEl?.textContent?.trim();
-          return { linkA, statusTd, project };
-        })
-        .filter(x => x.linkA && x.statusTd && x.project)
-        .slice(0, MAX_ITEMS);
+      const rawItems = document.querySelectorAll('gr-change-list-item');
+      console.log(`[Gerrit TM] gr-change-list-item count: ${rawItems.length}`);
+
+      const mapped = [...rawItems].map((item, i) => {
+        const sr = item.shadowRoot || item;
+        console.log(`[Gerrit TM] item[${i}] shadowRoot:`, !!item.shadowRoot);
+
+        const linkA    = sr.querySelector('td.cell.subject a') || sr.querySelector('td.subject a');
+        const statusTd = sr.querySelector('td.cell.status')    || sr.querySelector('td.status');
+        const repoEl   = sr.querySelector('td.cell.repo a.truncatedRepo') ||
+                         sr.querySelector('td.cell.repo a.fullRepo') ||
+                         sr.querySelector('td.repo a.truncatedRepo');
+        const project  = repoEl?.title?.trim() || repoEl?.textContent?.trim();
+        console.log(`[Gerrit TM] item[${i}] linkA:${!!linkA} statusTd:${!!statusTd} project:${project}`);
+        return { linkA, statusTd, project };
+      });
+
+      const filtered = mapped.filter(x => x.linkA && x.statusTd && x.project);
+      console.log(`[Gerrit TM] valid items: ${filtered.length}`);
+      return filtered.slice(0, MAX_ITEMS);
     }
 
     async function getCrLinkDetail(crlink, project) {
